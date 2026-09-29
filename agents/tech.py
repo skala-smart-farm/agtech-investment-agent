@@ -224,7 +224,8 @@ def tech_node(state: dict) -> dict:
     res: TechAnalysis = llm.invoke(render("tech", **ctx, feedback=""))
     hints = _leader_hints(blocks, names, ceo)
     retried = False
-    if not res.founders and hints:  # 근거에 '이름 + 대표' 같은 표현이 있는데 창업자를 비웠으면 한 번만 다시 묻는다
+    # 근거에 '이름 + 대표' 같은 표현이 있는데 (근거로 확인되는) 창업자가 비었으면 한 번만 다시 묻는다
+    if not _ground_founders(res.founders, blocks) and hints:
         retried = True
         feedback = ("직전 답의 founders 가 비어 있다. 근거에 다음 인물 표현이 있다: " + "; ".join(hints)
                     + "\n근거 본문에서 이 회사의 대표·공동창업자·기술 책임자인지 확인해 founders 를 채워라. "
@@ -234,6 +235,12 @@ def tech_node(state: dict) -> dict:
     valid = set(ids)
     out = res.model_dump()
     out["founders"] = _ground_founders(res.founders, blocks)
+    ck = norm(ceo or "")
+    if not out["founders"] and len(ck) >= 2:  # 그래도 비었으면 공공 데이터(TIPS)의 대표자를 근거와 함께 넣는다
+        found = [sid for sid, t in blocks.items() if ck in norm(t)]
+        if found:
+            out["founders"] = [{"name": ceo, "role": "대표", "background": "확인 불가 (TIPS 공개 목록의 대표자)",
+                                "evidence_ids": found[:3]}]
     # 근거 id 가 달린 성장 신호만 남긴다
     out["growth_signals"] = [g for g in res.growth_signals if set(CITE_ID.findall(g)) & valid]
     cited = (list(res.evidence_ids) + [i for f in out["founders"] for i in f["evidence_ids"]]

@@ -35,10 +35,16 @@ MENTION = [re.compile(rf"(?:{_COUNTRY})의?\s(?P<name>{_NAME})"),
                       r"(?:(?:, | and )[A-Z][\w&\-]+(?: [A-Z][\w&\-]+)?){0,4})")]
 LIST_SEP = re.compile(r"\s?,\s?|\s(?:and|or)\s")
 NOT_COMPANY = {"시장", "기업", "업체", "회사", "스타트업", "경쟁사", "경쟁", "제품", "기술", "정부", "농가", "농업", "외국", "해외",
-               "국내", "업계", "로봇", "등", "대비", "비슷한", "유사한", "다른", "기존", "현지", "The", "Other", "Many"}
-PARTICLE = re.compile(r"(?<=[가-힣]{2})(?:보다|에서|으로|와|과|의|는|은|를|을|도|로|가|이)$")
-# 대상이 경쟁사보다 낫다는 단정 (검증 전에는 쓰지 않는다). "주장"으로 출처를 밝힌 문장은 허용
-SUPERIOR = re.compile(r"앞선|앞서|우위|우월|뛰어나|능가|압도|선도|더 낫|차별화된다|outperform|superior|ahead of", re.I)
+               "국내", "업계", "로봇", "등", "대비", "비슷한", "유사한", "다른", "기존", "현지", "The", "Other", "Many",
+               "진출", "수출", "작물", "딸기", "토마토", "오이", "파프리카", "과일", "채소", "서비스", "솔루션", "플랫폼", "대표",
+               "한국", "정부", "전시회", "박람회", "CES", "투자", "고객", "농장", "온실", "스마트팜"}
+# 이름 끝의 조사 (한글·영문 이름 모두: '테벨과', 'Tevel보다', '시장에')
+PARTICLE = re.compile(r"(?<=[가-힣A-Za-z]{2})(?:보다|에서|에게|으로|와|과|의|는|은|를|을|도|로|가|이|에)$")
+# 대상이 경쟁사보다 낫다는 단정 (검증 전에는 쓰지 않는다). '회사 측 주장:' 뒤의 말은 출처를 밝힌 것이라 허용.
+# '선도 기업'·'앞서 언급한' 같은 경쟁사 사실 서술은 단정이 아니므로 비교 표현만 잡는다
+SUPERIOR = re.compile(r"앞선다|앞서 있|앞서는|우위(?:에|를|가)|우월|뛰어나|능가|압도|더 낫|차별화된다|outperform|superior|ahead of",
+                      re.I)
+CLAIMED = re.compile(r"회사\s?측\s?주장\s?[:：][^/\n.]*")  # 주장은 문장 끝('.')이나 '/' 까지
 CITE = re.compile(r"\[[WD][0-9a-f]{5}")
 
 
@@ -48,8 +54,8 @@ def _plain(s: str | None) -> str:
 
 
 def _asserts(text: str) -> bool:
-    """출처('주장')를 밝히지 않은 우열 단정이 있으면 True."""
-    return bool(SUPERIOR.search(text or "")) and "주장" not in text
+    """출처를 밝히지 않은 우열 단정이 있으면 True. '회사 측 주장: …' 부분(그 문장 끝까지)은 빼고 나머지만 본다."""
+    return bool(SUPERIOR.search(CLAIMED.sub("", text or "")))
 
 
 def mentioned_competitors(reg: SourceRegistry, ids: list[str], keys: list[str]) -> list[dict]:

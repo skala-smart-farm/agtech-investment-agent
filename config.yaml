@@ -10,7 +10,7 @@ domain:
     - {id: diagnosis, name: "작물 생육·병해충 진단 AI", ko: "작물 병해충 진단 AI", en: "AI crop disease detection"}
     - {id: robotics, name: "농업 로봇·자율주행 농기계", ko: "농업 로봇", en: "agricultural robotics autonomous tractor"}
     - {id: livestock, name: "축산 AI(가축 건강·사양 관리)", ko: "축산 AI", en: "livestock AI health monitoring"}
-    - {id: agdata, name: "농업 생산 데이터(생육·환경·수확 예측) AI", ko: "농업 데이터 플랫폼", en: "agriculture data platform AI"}
+    - {id: agdata, name: "농업 생산 데이터 분석·예측 AI (생육·환경 데이터)", ko: "농업 데이터 플랫폼", en: "agriculture data platform AI"}
 
 models:
   generator: gpt-4.1-mini              # 분석·보고서 작성

@@ -1,0 +1,1 @@
+{"error": "HTTPSConnectionPool(host='beautynury.com', port=443): Max retries exceeded with url: /news/view/23530/cat/10 (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] ssl/tls alert handsha"}

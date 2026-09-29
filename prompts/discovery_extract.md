@@ -11,6 +11,7 @@ AgTech 스타트업 투자 후보가 될 만한 회사를 모두 뽑아라.
 - 대기업·상장사·공공기관·지자체·투자사·언론사·협회는 is_startup_candidate=false.
 - 한 회사가 여러 이름(한글·영문·제품명)으로 나오면 공식 회사명 하나로 합친다.
 - 한국 회사는 region=KR, 그 밖은 GLOBAL.
+- segment_id 는 **핵심 제품**으로 고른다: 로봇·자율주행 농기계가 제품이면 robotics, 온실·스마트팜 환경제어면 greenhouse, 데이터 분석·예측 소프트웨어가 제품이면 agdata.
 
 근거:
 {{ evidence }}
