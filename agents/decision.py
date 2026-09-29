@@ -47,6 +47,8 @@ SCALE = re.compile(r"\d|농협|영농조합|농업회사법인")
 SCALE_WORD = re.compile(r"(?<![가-힣])(한|두|세|네|다섯|여섯|일곱|여덟|아홉|수십|수백|수천)\s*(곳|개소|농가|농장|마리)")
 # NO 판정 이유에 이런 말이 있으면 반대 사실이 아니라 근거 부족이다
 NO_HEDGE = re.compile(r"추정|불분명|명확하지않|확인되지않|없어|없으므로|근거가없")
+# 인용문 자체가 부정을 말하면("특허 없음", "인증을 받지 않았다") 이유에 '없어'가 있어도 반대 사실로 본다
+NEGATED = re.compile(r"없|않|아니|불가|미보유|미등록|\bno\b|\bnot\b|\bnever\b", re.I)
 UNDISCLOSED = ("비공개", "미공개", "undisclosed", "비밀", "n/a")
 
 
@@ -134,7 +136,9 @@ def _evidence_for(dim: dict, company: str, passages: list[tuple[str, str]], bm25
     항목 전체를 한 번에 검색하면 특정 문항(예: 날짜가 있는 마일스톤)의 근거가 밀려나기 때문."""
     picked: list[int] = []
     for q in dim["questions"]:
-        scores = bm25.get_scores(kiwi_tokenize(f"{company} {q['text']} {q['need']}"))
+        # 괄호 안 설명("예정·실증은 상용 운영 아님" 등)은 판정 규칙이지 검색어가 아니라서 뺀다 (넣으면 제외할 문장을 더 끌어옴)
+        need = re.sub(r"\(.*?\)", "", q["need"])
+        scores = bm25.get_scores(kiwi_tokenize(f"{company} {q['text']} {need}"))
         for i in sorted(range(len(passages)), key=lambda i: -scores[i])[:per_q]:
             if i not in picked:
                 picked.append(i)
@@ -311,7 +315,8 @@ def decision_node(state: dict) -> dict:
                 ev = _quote_sources(a.quote, ev, pool, reg) if a.quote.strip() else []
                 if not ev:
                     verdict, note = "UNKNOWN", f"반대 근거 인용이 원문에서 확인되지 않음 → NO 대신 UNKNOWN ({note})"
-                elif NO_HEDGE.search(re.sub(r"\s+", "", a.rationale)):  # 이유가 "추정·확인되지 않음·근거가 없어" 류
+                elif NO_HEDGE.search(re.sub(r"\s+", "", a.rationale)) and not NEGATED.search(a.quote):
+                    # 이유가 "추정·확인되지 않음·근거가 없어" 류이고 인용문 자체에 부정 표현도 없으면 근거 부족
                     verdict, note = "UNKNOWN", f"반대 사실이 아니라 근거 부족 → NO 대신 UNKNOWN ({note})"
             yes += verdict == "YES"
             unknown += verdict == "UNKNOWN"
