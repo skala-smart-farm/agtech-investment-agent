@@ -79,7 +79,7 @@ uv sync                                    # 또는: pip install -r requirements
 uv run playwright install chromium         # PDF 생성용 브라우저 (처음 한 번)
 python app.py                              # 제출본 재현 → outputs/RAG-Output_*.pdf  (uv 환경이면 uv run python app.py)
 ```
-- `python app.py --offline` : 재현 테스트. 캐시에 없는 호출이 생기면 바로 실패하므로 **API 키 없이** 제출본이 그대로 나오는지 확인한다
+- `python app.py --offline` : 재현 테스트. 캐시에 없는 호출이 생기면 바로 실패하므로 **API 키 없이** 제출본이 그대로 나오는지 확인한다 → 새 clone 에서 통과 기록: [outputs/eval/repro_check.md](outputs/eval/repro_check.md)
 - `python app.py --fresh` : 오늘 기준으로 새로 평가 (`.env` 에 OPENAI_API_KEY, TAVILY_API_KEY 필요 · 약 8분 · LLM 약 $0.3)
 - `python app.py --graph-only` : 아키텍처 그림만 생성 / `python -m docs.build_design` : 설계 문서 생성
 - 평가 재현 : `python -m eval.eval_retrieval` · `eval.eval_final_retriever` · `eval.eval_eligibility [holdout]` · `eval.eval_judge`
