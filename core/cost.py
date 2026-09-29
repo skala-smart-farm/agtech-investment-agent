@@ -8,7 +8,7 @@ import threading
 
 from langchain_core.callbacks import BaseCallbackHandler
 
-# USD / 100만 토큰 (OpenAI 공개 가격, config.yaml pricing 으로 덮어쓸 수 있음)
+# USD / 100만 토큰 (OpenAI 공개 가격: 입력, 출력). 프롬프트 캐시로 처리된 입력은 입력 가격의 1/4
 DEFAULT_PRICE = {"gpt-4.1-mini": (0.40, 1.60), "gpt-4.1-nano": (0.10, 0.40)}
 
 
@@ -28,10 +28,11 @@ class CostTracker(BaseCallbackHandler):
             model = str(out.get("model_name", ""))
             pi, po = next((v for k, v in DEFAULT_PRICE.items() if model.startswith(k)), (0.40, 1.60))
             i, o = usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0)
+            ci = (usage.get("prompt_tokens_details") or {}).get("cached_tokens", 0) or 0
             self.calls += 1
             self.input_tokens += i
             self.output_tokens += o
-            self.usd += i / 1e6 * pi + o / 1e6 * po
+            self.usd += (i - ci) / 1e6 * pi + ci / 1e6 * pi / 4 + o / 1e6 * po
 
     def summary(self) -> dict:
         return {"api_calls": self.calls, "cache_hits": self.cached, "input_tokens": self.input_tokens,

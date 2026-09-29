@@ -19,32 +19,43 @@ from jinja2 import Environment, FileSystemLoader
 from core.config import ROOT, get_config, path
 from rag.loader import load_manifest, total_pages
 
-MAIN_MERMAID = """graph TD
+def _main_mermaid(cfg) -> str:
+    w = cfg.workflow
+    return f"""graph TD
   S([START]) --> D["🔭 스타트업 발굴<br/>TIPS·투자기사 피드·뉴스·공공 선정·기업DB·문서 RAG"]
-  D --> V["✅ 적격성 검증<br/>G1 상장목록 대조 · G2 단계 인용검증 · G3 Exit · G4 반증검색 · G5 분야 · G6 근거량"]
+  D --> V["✅ 적격성 검증<br/>G1 상장목록 · G2 단계 인용 · G3 Exit · G4 반증 · G5 분야 · G6 근거량<br/>검증 검색 실패 시 통과 불가"]
   V -->|대기열 있음| SEL["다음 후보 선택"]
   V -->|후보 없음 · 발굴 라운드 남음| D
   V -->|후보 없음 · 라운드 소진| R
-  SEL --> T["🔬 기술·팀 분석<br/>회사 검색(본문) + Agentic RAG"]
-  SEL --> M["📊 시장성 평가<br/>Agentic RAG 5문항 + 뉴스"]
-  T --> C["🥊 경쟁사 비교"]
+  SEL --> T["🔬 기술·팀 분석<br/>기사 본문에서 창업자·기술 추출"]
+  SEL --> M["📊 시장성 평가<br/>Agentic RAG: 질문 분해 → 문서/웹 선택"]
+  T --> C["🥊 경쟁사 비교<br/>제품 유형 기준"]
   M --> C
   C --> J["🧮 투자 판단<br/>24문항 YES/NO/UNKNOWN · 코드 채점"]
-  J -->|투자| R["📝 보고서 생성<br/>SUMMARY·REFERENCE·5쪽 검증"]
+  J -->|투자| R["📝 보고서 생성<br/>모두 보류면 후보별 불가 사유 · 5쪽 검증"]
   J -->|보류 · 대기열 남음| SEL
   J -->|보류 · 대기열 비고 라운드 남음| D
-  J -->|보류 · 평가 상한 도달 또는 후보 소진| R
+  J -->|"보류 · 평가 상한({w.max_evaluations}곳) 또는 후보 소진"| R
   R --> E([END])"""
 
-RAG_MERMAID = """graph LR
-  Q["질문"] --> RT["retrieve<br/>Kiwi BM25 + Dense (RRF) · 후보 8"]
-  RT --> G["grade<br/>Judge LLM 조각별 O/X"]
-  G -->|관련 조각 ≥ 2| F["finish<br/>근거 등록 (문서·쪽)"]
-  G -->|부족 · 재작성 2회 미만| RW["rewrite<br/>질의 재작성"]
-  RW --> RT
-  G -->|부족 · 재작성 2회 소진| W["web<br/>웹 검색으로 보완"]
-  W --> F"""
 
+def _rag_mermaid(cfg) -> str:
+    r = cfg.rag
+    return f"""graph LR
+  Q["시장 질문"] --> DC["decompose<br/>LLM 하위 질문 3~6개"]
+  DC --> RO{{"route<br/>LLM: 문서 / 웹 / 둘 다"}}
+  RO -->|문서| RT["retrieve<br/>Kiwi BM25 + Dense · 후보 {r.candidate_k}"]
+  RO -->|웹| WS["web 검색<br/>뉴스 최근 1년"]
+  RT --> G["grade<br/>Judge LLM 조각별 O/X"]
+  G -->|"관련 ≥ {r.min_relevant}"| F["finish<br/>상위 {r.top_k}개 근거 등록"]
+  G -->|"부족 · 재작성 {r.max_rewrites}회 미만"| RW["rewrite<br/>질의 재작성"]
+  RW --> RT
+  G -->|부족 · 재작성 소진| W["web<br/>웹 검색으로 보완"]
+  W --> F
+  WS --> F"""
+
+
+# 쓰는/읽는 노드 칸은 코드를 읽고 사람이 적은 값이다 (타입·설명 칸만 graph/state.py 에서 자동 추출)
 WRITERS = {
     "domain": "app", "run_date": "app", "registry": "모든 에이전트", "discovery_rounds": "discover",
     "raw_candidates": "discover", "seen": "discover", "screened": "verify", "queue": "verify · select",
@@ -53,13 +64,14 @@ WRITERS = {
     "rag_traces": "discover · tech · market", "log": "모든 노드",
 }
 READERS = {
-    "domain": "discover", "run_date": "decide(24개월 판정) · report", "registry": "모든 에이전트 (근거 인용·REFERENCE)",
-    "discovery_rounds": "라우터(발굴 반복 상한)", "raw_candidates": "verify", "seen": "discover(중복 발굴 방지)",
-    "screened": "report(선정 과정·한계점)", "queue": "select · 라우터", "current": "tech · market · competition · decide · report",
-    "tech": "competition · decide · report", "market": "decide · report", "market_cache": "market(같은 분야 재사용)",
-    "competition": "decide · report", "scorecard": "report", "iterations": "라우터(평가 상한)",
-    "evaluations": "report(후보 비교·최고점)", "decision": "라우터(투자면 보고서)", "report": "app(run_log)",
-    "rag_traces": "app(run_log)", "log": "app(run_log)",
+    "domain": "없음 (실행 기록용, 에이전트는 config 를 읽음)", "run_date": "verify · decide(24개월 판정) · report(작성일)",
+    "registry": "모든 에이전트 (근거 인용·REFERENCE)", "discovery_rounds": "라우터(발굴 반복 상한)",
+    "raw_candidates": "verify", "seen": "discover(중복 발굴 방지)", "screened": "report(선정 과정·미평가 후보)",
+    "queue": "select · 라우터", "current": "tech · market · competition · decide",
+    "tech": "competition · decide", "market": "decide", "market_cache": "market(같은 분야 재사용)",
+    "competition": "decide", "scorecard": "없음 (report 는 evaluations 안의 후보별 사본을 읽음)",
+    "iterations": "라우터(평가 상한)", "evaluations": "report(후보별 사유·최고점 상세)",
+    "decision": "라우터(투자면 보고서)", "report": "app(run_log)", "rag_traces": "app(run_log)", "log": "app(run_log)",
 }
 RESET_BY_SELECT = {"tech", "market", "competition", "scorecard"}
 
@@ -87,7 +99,7 @@ def _retrieval_table() -> str:
     piv = (df.groupby(["retriever", "embedding"])[["Hit@1", "Hit@3", "Hit@5", "MRR@5"]].mean().round(3)
            .sort_values("MRR@5", ascending=False).reset_index())
     piv["embedding"] = piv["embedding"].str.replace("dragonkue/", "").str.replace("intfloat/", "")
-    return piv.head(14).to_markdown(index=False)
+    return piv.to_markdown(index=False)
 
 
 def _tiebreak_table() -> str:
@@ -103,6 +115,26 @@ def _tiebreak_table() -> str:
             r = d[k]
             rows.append(f"| {label} | " + " | ".join(f"{r[l]['Hit@8']:.3f} / {r[l]['MRR@5']:.3f}" for l in ("all", "ko", "en")) + " |")
     return "\n".join(rows)
+
+
+def _elig_stale() -> bool:
+    """적격성 평가 결과가 현재 적격성 코드보다 오래됐으면 True (설계서에 '재측정 안 됨'을 자동으로 밝히기 위해)."""
+    res = path("outputs/eval/eligibility_eval_gold.json")
+    code = [path(p) for p in ("agents/eligibility.py", "prompts/eligibility.md", "tools/web_search.py")]
+    return not res.exists() or any(c.stat().st_mtime > res.stat().st_mtime for c in code)
+
+
+def _runtime_table() -> str:
+    """실제 파이프라인 설정(후보 k, 앞 4개 사용)으로 잰 검색기 비교 (eval/eval_final_retriever.py 결과)."""
+    d = _json("outputs/eval/runtime_retriever.json")
+    rows = d.get("rows") or []
+    if not rows:
+        return "(eval/eval_final_retriever.py 실행 결과 없음)"
+    cols = [c for c in ("Hit@1", "Hit@3", "Hit@4", "Hit@5", "Hit@8", "MRR@4") if c in rows[0]]
+    out = ["| 설정 | " + " | ".join(cols) + " |", "|---|" + "---|" * len(cols)]
+    for r in rows:
+        out.append(f"| {r.get('name')} | " + " | ".join(f"{r[c]:.3f}" for c in cols) + " |")
+    return "\n".join(out)
 
 
 def _json(rel: str) -> dict:
@@ -140,7 +172,8 @@ def build() -> tuple[str, str]:
             _json("outputs/eval/eligibility_eval_gold.json").get("summary")),
         elig_holdout=(lambda j: f"정확도 {j['accuracy']:.2f}" if j else "(미실행)")(
             _json("outputs/eval/eligibility_eval_holdout.json").get("summary")),
-        main_mermaid=MAIN_MERMAID, rag_mermaid=RAG_MERMAID)
+        elig_stale=_elig_stale(), runtime_table=_runtime_table(), runtime=_json("outputs/eval/runtime_retriever.json"),
+        main_mermaid=_main_mermaid(cfg), rag_mermaid=_rag_mermaid(cfg))
     md_path = path("docs/design.md")
     md_path.write_text(md, encoding="utf-8")
 

@@ -13,24 +13,6 @@ from core.config import ROOT, get_config, path
 from rag.loader import load_manifest, total_pages
 
 
-def _labels() -> dict:
-    from agents.decision import load_rubric
-
-    return {q["id"]: q["short"] for d in load_rubric()["dimensions"] for q in d["questions"]}
-
-
-LABELS = _labels()
-GAP_KEYS = ["R1", "R2", "R3", "C1", "P4", "P1", "C2"]
-
-
-def _nps_example(run: dict) -> str:
-    for e in sorted(run.get("evaluations", []), key=lambda e: -e["total"]):
-        n = e.get("nps") or {}
-        if n.get("status") == "matched":
-            return f"{e['name']} 가입자 {n['members']}명, 최초 가입 {n['first_date']}"
-    return "평가 후보별 인원·최초 가입일"
-
-
 def _search_providers() -> str:
     """재현용 캐시에 실제로 결과를 준 검색 공급자만 적는다 (키를 받지 못한 공급자를 쓴 것처럼 쓰지 않게)."""
     used = set()
@@ -45,43 +27,75 @@ def _j(rel: str) -> dict:
     return json.loads(f.read_text(encoding="utf-8")) if f.exists() else {}
 
 
+def _runtime(cfg) -> tuple[str, str, str]:
+    """실제 파이프라인 설정으로 잰 검색기 수치 (eval/eval_final_retriever.py → outputs/eval/runtime_retriever.json)."""
+    d = _j("outputs/eval/runtime_retriever.json")
+    w = cfg.rag.ensemble_weights
+    label = "Dense 단독" if w[0] == 0 else f"하이브리드 BM25 {w[0]} : Dense {w[1]}"
+    row = next((r for r in d.get("rows", []) if r.get("configured")), None)
+    if not row:
+        return label, "-", "-"
+    return label, f"{row['Hit@4']:.3f}", f"{row['MRR@4']:.3f}"
+
+
+def _elig_stale() -> bool:
+    res = path("outputs/eval/eligibility_eval_gold.json")
+    code = [path(p) for p in ("agents/eligibility.py", "prompts/eligibility.md", "tools/web_search.py")]
+    return not res.exists() or any(c.stat().st_mtime > res.stat().st_mtime for c in code)
+
+
+def _pc_line() -> str:
+    d = _j("outputs/eval/positive_control.json")
+    rows = d.get("rows") or d.get("results") or []
+    if not rows:
+        return "(미실행)"
+    inv = [r for r in rows if r.get("decision") == "투자"]
+    best = max(rows, key=lambda r: r.get("total", 0))
+    return (f"{len(rows)}곳 중 투자 {len(inv)}곳 · 최고 {best.get('name')} {best.get('total')}점"
+            + ("" if inv else " — 공개 정보만으로는 기준(70점)을 넘지 못함"))
+
+
+def _common_cause(evals: list[dict]) -> str:
+    """보류 사유 중 가장 많이 겹친 것 (코드가 run_log 에서 센다)."""
+    from collections import Counter
+
+    c = Counter(re.sub(r"\(.*?\)", "", k).strip() for e in evals for k in e.get("knockouts", []))
+    c.pop("점수 미달", None)
+    return ", ".join(f"{k} {v}곳" for k, v in c.most_common(2)) or "점수 미달"
+
+
+def _contributors() -> str:
+    f = path("docs/contributors.md")
+    return f.read_text(encoding="utf-8").strip() if f.exists() else "(조원별 수행 역할 확인 중)"
+
+
 def build() -> str:
     cfg = get_config()
     run = _j("outputs/run_log.json")
-    fr = _j("outputs/eval/final_retriever.json")
     judge = _j("outputs/eval/judge_eval.json").get("summary", {})
     gold = _j("outputs/eval/eligibility_eval_gold.json").get("summary", {})
     hold = _j("outputs/eval/eligibility_eval_holdout.json").get("summary", {})
-    m = re.search(r"후보 (\d+)곳 \(교차 신호 2채널 이상 (\d+)곳\)", " ".join(run.get("log", [])))
+    m = re.search(r"후보 (\d+)곳", " ".join(run.get("log", [])))
     team = cfg.submission
     members = "+".join(sorted(team.members))
     evals = sorted(run.get("evaluations", []), key=lambda e: -e["total"])
-    top_rows = {r["qid"]: r["answer"] for r in (evals[0]["rows"] if evals else [])}
-    strengths = ", ".join(LABELS[q] for q in LABELS if top_rows.get(q) == "YES") or "-"
-    gaps = ", ".join(LABELS[q] for q in GAP_KEYS if top_rows.get(q) not in (None, "YES")) or "-"
+    screened = run.get("screened", [])
+    n_eligible = sum(1 for s in screened if s["eligible"])
+    label, hit4, mrr4 = _runtime(cfg)
     md = Environment(loader=FileSystemLoader(ROOT / "docs")).get_template("README.md.j2").render(
-        cfg=cfg, run=run, strengths=strengths, gaps=gaps, nps_example=_nps_example(run), search_providers=_search_providers(), r=run.get("report", {}), evals=evals,
-        disc={"candidates": m.group(1) if m else "-", "cross": m.group(2) if m else "-"},
-        n_screened=len(run.get("screened", [])), n_eligible=sum(1 for s in run.get("screened", []) if s["eligible"]),
-        rejected=sum(len(e.get("rejected_yes", [])) for e in run.get("evaluations", [])),
-        fr=_A(fr.get("final (hybrid)", {})), fd=_A(fr.get("dense only", {})), fb=_A(fr.get("Kiwi BM25 only", {})),
+        cfg=cfg, run=run, r=run.get("report", {}), evals=evals, search_providers=_search_providers(),
+        disc={"candidates": m.group(1) if m else "-"}, n_eligible=n_eligible,
+        n_unevaluated=max(0, n_eligible - len(evals)), common_cause=_common_cause(evals),
+        retrieval_label=label, rt_hit4=hit4, rt_mrr4=mrr4, pc_line=_pc_line(), elig_stale=_elig_stale(),
         judge_line=(f"Relevance {judge['relevance']:.2f} · Faithfulness {judge['faithfulness']:.2f} · "
-                    f"Correctness {judge['correctness']:.2f} (재작성 {judge['rewrite_rate']:.0%}, 웹 보완 "
-                    f"{judge['web_fallback_rate']:.0%})") if judge else "-",
+                    f"Correctness {judge['correctness']:.2f}") if judge else "-",
         elig_gold=f"{gold.get('accuracy', 0):.2f}", elig_holdout=f"{hold.get('accuracy', 0):.2f}",
-        n_docs=len(load_manifest()), total_pages=total_pages(),
-        design_pdf=f"RAG-Design_{team.campus}-{team['class']}_{members}.pdf",
+        n_docs=len(load_manifest()), total_pages=total_pages(), run_cost=cfg.report.get("run_cost_usd", "0.4"),
+        contributors=_contributors(),
         report_pdf=f"RAG-Output_{team.campus}-{team['class']}_{members}.pdf")
     out = ROOT / "README.md"
     out.write_text(md, encoding="utf-8")
     return str(out)
-
-
-class _A(dict):
-    """템플릿에서 fr.all / fr.ko / fr.en 으로 접근."""
-
-    def __getattr__(self, k):
-        return self[k]
 
 
 if __name__ == "__main__":

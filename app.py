@@ -15,10 +15,11 @@ import warnings
 warnings.filterwarnings("ignore")  # 라이브러리 경고로 진행 로그가 묻히지 않게
 sys.stdout.reconfigure(line_buffering=True)  # 파일로 내보낼 때도 진행 로그가 바로 보이게
 
-from core.config import get_config, path
+from core.config import ROOT, get_config, path
 from core.config import run_date as get_run_date
 from core.cost import TRACKER
 from graph.builder import build_graph
+from tools import web_search as web_search_mod
 
 
 def save_graph_image(app) -> str:
@@ -89,20 +90,29 @@ def main() -> None:
         "run_date": run_date, "elapsed_sec": elapsed,
         "models": dict(cfg.models), "embedding": cfg.embedding.model,
         "discovery_rounds": state.get("discovery_rounds"), "evaluated": state.get("iterations"),
-        "screened": [{k: r.get(k) for k in ("name", "region", "stage", "round_date", "eligible", "reason", "channels")}
+        "screened": [{k: r.get(k) for k in ("name", "region", "stage", "round_date", "founded_date", "ceo", "eligible",
+                                            "reason", "gate_search_failed", "channels")}
                      for r in state.get("screened", [])],
         "evaluations": [{**{k: e[k] for k in ("name", "total", "decision", "knockouts", "dims", "unknown_ratio")},
                          "nps": (e.get("profile") or {}).get("nps"),
-                         "rows": [{k: r[k] for k in ("qid", "answer", "rationale")} for r in e["scorecard"]["rows"]],
+                         "rows": [{k: r.get(k) for k in ("qid", "answer", "rationale", "quote", "evidence_ids")}
+                                  for r in e["scorecard"]["rows"]],
                          "rejected_yes": e["scorecard"].get("rejected_yes", []),
                          "quote_retried": e["scorecard"].get("quote_retried", 0)}
                         for e in state.get("evaluations", [])],
         "report": report, "rag_traces": state.get("rag_traces", []), "log": state.get("log", []),
         "sources_collected": len(state.get("registry", {})),
+        "failed_searches": list(getattr(web_search_mod, "FAILED_QUERIES", [])),
         "llm_cost": TRACKER.summary(),
     }
-    path(f"{cfg.report.output_dir}/run_log.json").write_text(json.dumps(run_log, ensure_ascii=False, indent=2),
-                                                             encoding="utf-8")
+    # 공개 저장소에 로컬 절대경로가 남지 않게 저장소 기준 상대경로로 적는다
+    text = json.dumps(run_log, ensure_ascii=False, indent=2).replace(str(ROOT) + "/", "")
+    path(f"{cfg.report.output_dir}/run_log.json").write_text(text, encoding="utf-8")
+    cost = TRACKER.summary()
+    if cost.get("api_calls"):  # 실제로 API 를 부른 실행만 비용 기록을 남긴다 (캐시 재생 실행은 0원이라 남기지 않음)
+        with open(path(f"{cfg.report.output_dir}/cost_history.jsonl"), "a", encoding="utf-8") as f:
+            f.write(json.dumps({"run_date": run_date, "finished_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+                                "elapsed_sec": elapsed, "fresh": args.fresh, **cost}, ensure_ascii=False) + "\n")
     print(f"== 완료 ({elapsed}초, LLM {TRACKER.summary()}) ==")
     if report:
         print(f"보고서: {report['submit_pdf']}")
