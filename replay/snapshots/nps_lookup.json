@@ -428,5 +428,131 @@
    }
   ],
   "ym": "2026-08"
+ },
+ "아그모|agmo": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "주식회사아그모",
+    "brn6": "210880",
+    "status": "1",
+    "corp": "1",
+    "industry": "자연과학 및 공학 융합 연구개발업",
+    "first_date": "2022-08-23",
+    "withdraw_date": NaN,
+    "members": "21",
+    "new": "1",
+    "lost": "1"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "인트플로우|intflow": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "인트플로우 주식회사",
+    "brn6": "510813",
+    "status": "1",
+    "corp": "1",
+    "industry": "전동기 및 발전기 제조업",
+    "first_date": "2019-08-01",
+    "withdraw_date": NaN,
+    "members": "22",
+    "new": "3",
+    "lost": "1"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "한국축산데이터|aidkr": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "한국축산데이터 주식회사",
+    "brn6": "872880",
+    "status": "1",
+    "corp": "1",
+    "industry": "축산 관련 서비스업",
+    "first_date": "2018-06-01",
+    "withdraw_date": NaN,
+    "members": "5",
+    "new": "0",
+    "lost": "0"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "트릿지|tridge": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "주식회사트릿지",
+    "brn6": "770870",
+    "status": "1",
+    "corp": "1",
+    "industry": "응용 소프트웨어 개발 및 공급업",
+    "first_date": "2016-10-01",
+    "withdraw_date": NaN,
+    "members": "33",
+    "new": "1",
+    "lost": "4"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "유라이크코리아|ulikekorea": {
+  "status": "not_found",
+  "matches": [],
+  "ym": "2026-08"
+ },
+ "팜에이트|farm8": {
+  "status": "ambiguous",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "농업회사법인 팜에이트 주식회사",
+    "brn6": "301817",
+    "status": "1",
+    "corp": "1",
+    "industry": "종자 및 묘목 도매업",
+    "first_date": "2005-09-01",
+    "withdraw_date": NaN,
+    "members": "136",
+    "new": "3",
+    "lost": "2"
+   },
+   {
+    "ym": "2026-08",
+    "name": "농업회사법인팜에이트주식회사(이천지점)",
+    "brn6": "593850",
+    "status": "1",
+    "corp": "1",
+    "industry": "곡물 및 기타 식량작물 재배업",
+    "first_date": "2017-05-24",
+    "withdraw_date": NaN,
+    "members": "62",
+    "new": "1",
+    "lost": "1"
+   },
+   {
+    "ym": "2026-08",
+    "name": "농업회사법인팜에이트주식회사(광주지점)",
+    "brn6": "845850",
+    "status": "1",
+    "corp": "1",
+    "industry": "기타 과실ㆍ채소 가공 및 저장 처리업",
+    "first_date": "2022-08-09",
+    "withdraw_date": NaN,
+    "members": "15",
+    "new": "2",
+    "lost": "0"
+   }
+  ],
+  "ym": "2026-08"
  }
 }

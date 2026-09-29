@@ -16,7 +16,7 @@
       "ok": true,
       "pred_stage": "Series C",
       "raw_stage": "Series C",
-      "stage_quote": "Israel-based agritech company Tevel secured US$18m in Series C funding",
+      "stage_quote": "Israel-based agritech company Tevel secured US$18m in Series C funding to accelerate their deployment.",
       "reason": "통과",
       "basis": "Series C US$18M (2026-03)"
     },
@@ -40,7 +40,7 @@
       "ok": true,
       "pred_stage": "Series B",
       "raw_stage": "Series B",
-      "stage_quote": "4AG Robotics has raised $42.0M across 2 funding rounds. Most recently, it raised $29.0M Series B in July 2025.",
+      "stage_quote": "4AG Robotics has raised $29.0M Series B in July 2025.",
       "reason": "통과",
       "basis": "Series B C$40M (2025-07)"
     },
@@ -52,7 +52,7 @@
       "ok": true,
       "pred_stage": "Series B",
       "raw_stage": "Series B",
-      "stage_quote": "Burro - 2026 Company Profile, Team, Funding & Competitors Burro has raised a total funding of $44.5M over 4 rounds. Its latest funding round was a Series B round on Dec 12, 2023",
+      "stage_quote": "Burro - Series B",
       "reason": "통과",
       "basis": "Series B $24M (2024-01)"
     },
@@ -64,7 +64,7 @@
       "ok": true,
       "pred_stage": "Series A",
       "raw_stage": "Series A",
-      "stage_quote": "Aigen, a Kirkland, Washington, DC-based AI-driven robotics company, has closed a $12 million Series A funding, bringing its total raised to $19 million.",
+      "stage_quote": "Aigen Closes $12 Million in Series A",
       "reason": "통과",
       "basis": "Series A $12M (2023-11)"
     },
@@ -77,7 +77,7 @@
       "pred_stage": "Series C",
       "raw_stage": "Series C",
       "stage_quote": "Monarch raised capital across multiple rounds, beginning with a $20 million Series A in 2021. The funding trajectory culminated in a $133 million Series C in July 2024, co-led by Astanor Ventures and HH-CTBC Partnership L.P., an affiliate of Foxconn.",
-      "reason": "G1/G3 상장 또는 Exit 완료 근거 있음; G5 상장사·대기업 계열 (독립 스타트업 아님); G4 중대한 부정 신호: Mass layoffs and headquarters closure reported in 2026.",
+      "reason": "G1/G3 상장 또는 Exit 완료 근거 있음; G4 중대한 부정 신호: Monarch Tractor warned staff it may need to lay off more than 100 employees or possibly shut down; filed WARN notice for 89 layoffs; abandoned headquarters; shut down operations.",
       "basis": "사업 붕괴 후 Caterpillar 가 자산 인수 (2026-04)"
     },
     {
@@ -88,8 +88,8 @@
       "ok": true,
       "pred_stage": "Unknown",
       "raw_stage": "Unknown",
-      "stage_quote": "",
-      "reason": "G2 투자 단계 'Unknown' (Seed~Series C 아님 또는 확인 불가); G4 중대한 부정 신호: Agtech startup Small Robot Company shutting down",
+      "stage_quote": "the latest funding round was in September 2022.",
+      "reason": "G1/G3 상장 또는 Exit 완료 근거 있음; G2 투자 단계 'Unknown' (Seed~Series C 아님 또는 확인 불가); G4 중대한 부정 신호: Agtech startup Small Robot Company shutting down",
       "basis": "관리인 선임·청산 (2024-02)"
     },
     {
@@ -113,7 +113,7 @@
       "pred_stage": "Unknown",
       "raw_stage": "Series A",
       "stage_quote": "Ecoation's Disease Detection Tool Raises $1m, Tech Raises £10m for Animal Therapeutics Platform. Raises $4.25m Series",
-      "reason": "G2 투자 단계 'Unknown' (Seed~Series C 아님 또는 확인 불가)",
+      "reason": "G1/G3 상장 또는 Exit 완료 근거 있음; G2 투자 단계 'Unknown' (Seed~Series C 아님 또는 확인 불가); G5 AI 농업 생산성 기술 확인 불가",
       "basis": "Biobest 가 사업·자산 인수 (2025-07) — Exit"
     },
     {
@@ -122,10 +122,10 @@
       "gold": false,
       "pred": false,
       "ok": true,
-      "pred_stage": "Unknown",
-      "raw_stage": "Unknown",
-      "stage_quote": "",
-      "reason": "G2 투자 단계 'Unknown' (Seed~Series C 아님 또는 확인 불가); G6 근거 출처 0곳(제3자 0곳) — 3곳 이상·제3자 1곳 이상 필요",
+      "pred_stage": "Series A",
+      "raw_stage": "Series A",
+      "stage_quote": "Crop disease recognition app Plantix raises €6.6m Series ...",
+      "reason": "G1/G3 상장 또는 Exit 완료 근거 있음; G5 상장사·대기업 계열 (독립 스타트업 아님) (참고: 최근 라운드 2019-11 — 기준일보다 5년 넘게 전)",
       "basis": "HELM AG 과반 지분 인수 (2023-04) — Exit"
     }
   ]

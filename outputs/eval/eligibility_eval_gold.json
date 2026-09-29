@@ -1,11 +1,11 @@
 {
   "summary": {
     "n": 20,
-    "accuracy": 1.0,
+    "accuracy": 0.95,
     "precision": 1.0,
-    "recall": 1.0,
+    "recall": 0.909,
     "false_positive": 0,
-    "false_negative": 0
+    "false_negative": 1
   },
   "rows": [
     {
@@ -17,7 +17,7 @@
       "pred_stage": "Series B",
       "raw_stage": "Series B",
       "stage_quote": "엔씽, 120억 규모 시리즈 B 투자 유치",
-      "reason": "통과",
+      "reason": "통과 (참고: 최근 라운드 2020-09 — 기준일보다 5년 넘게 전)",
       "basis": "비상장, 시리즈C까지 유치(회사 발표), 2026-03 삼성벤처투자 전략투자"
     },
     {
@@ -40,8 +40,8 @@
       "ok": true,
       "pred_stage": "Pre-A",
       "raw_stage": "Pre-A",
-      "stage_quote": "스마트팜 인공지능 솔루션 ‘아이오팜’을 운영하는 아이오크롭스가 이수창업투자, 인라이트벤처스, 서울대기술지주 등으로부터 총 18억 원 규모의 프리 시리즈A 라운드 투자를 유치했다.",
-      "reason": "통과",
+      "stage_quote": "어그테크 기업 ‘아이오크롭스’, 프리A 18억 원 투자유치",
+      "reason": "통과 (참고: 최근 라운드 2021-06 — 기준일보다 5년 넘게 전)",
       "basis": "비상장, 시리즈A 70억 (2022-12)"
     },
     {
@@ -52,7 +52,7 @@
       "ok": true,
       "pred_stage": "Pre-A",
       "raw_stage": "Pre-A",
-      "stage_quote": "'농기계 부착형 자율주행 솔루션' 아그모, 15억 프리A 투자 유치",
+      "stage_quote": "'농기계 자율주행 솔루션' 아그모가 퓨처플레이, 경농으로부터 15억 원 규모의 프리시리즈A 라운드 투자를 유치했다.",
       "reason": "통과",
       "basis": "비상장, 시리즈A 진행 (2026-07)"
     },
@@ -76,7 +76,7 @@
       "ok": true,
       "pred_stage": "Series B",
       "raw_stage": "Series B",
-      "stage_quote": "한국축산데이터  한국∙스타트업 | 팜스플랜의 제품 로고 팜스플랜  데이터기반 양돈농가 축사 관리 서비스 | 빅데이터/분석 | 축산업  모니터링 | Series B  259억 9991만원",
+      "stage_quote": "한국축산데이터 데이터기반 양돈농가 축사 관리 서비스 | 빅데이터/분석 | 축산업  모니터링 | Series B",
       "reason": "통과",
       "basis": "비상장, 시리즈B 200억 (2021-11) 이후 유상증자"
     },
@@ -89,7 +89,7 @@
       "pred_stage": "Series D 이상",
       "raw_stage": "Series D 이상",
       "stage_quote": "농축산물 무역 '트릿지', 500억원 시리즈D 투자 유치…기업가치 3조6천억원 인정받아",
-      "reason": "G2 투자 단계 'Series D 이상' (Seed~Series C 아님 또는 확인 불가); G4 중대한 부정 신호: 2024년 매출 급감, 영업손실 지속, 현금성 자산 10억원, 감사보고서에 존속능력 불확실성 경고, 2026년 자금난 및 구제금융 보도",
+      "reason": "G2 투자 단계 'Series D 이상' (Seed~Series C 아님 또는 확인 불가); G5 AgTech 분야가 아님; G4 중대한 부정 신호: 2024년 매출 급감, 영업손실 지속, 2026년 자금난 및 완전 자본잠식 상태, 현금성 자산 10억원, 회사 존속능력에 중요한 불확실성 경고 포함",
       "basis": "시리즈D 500억 (2022-08) — Series C 초과"
     },
     {
@@ -101,7 +101,7 @@
       "pred_stage": "Series A",
       "raw_stage": "Series A",
       "stage_quote": "유라이크코리아 스마트축산 ICT 전문기업 단계 : 시리즈A 펀딩 : 50억 누적 : 70억+ 투자 : KDB산업은행",
-      "reason": "G1/G3 상장 또는 Exit 완료 근거 있음; G5 상장사·대기업 계열 (독립 스타트업 아님)",
+      "reason": "G1/G3 상장 또는 Exit 완료 근거 있음; G5 상장사·대기업 계열 (독립 스타트업 아님) (참고: 최근 라운드 2020-08 — 기준일보다 5년 넘게 전)",
       "basis": "메텍홀딩스가 지분 51% 인수 (2025-03) — M&A Exit"
     },
     {
@@ -113,7 +113,7 @@
       "pred_stage": "Pre-IPO",
       "raw_stage": "Pre-IPO",
       "stage_quote": "스마트팜업체 '팜에이트' 프리IPO 마무리",
-      "reason": "G2 투자 단계 'Pre-IPO' (Seed~Series C 아님 또는 확인 불가); G5 상장사·대기업 계열 (독립 스타트업 아님)",
+      "reason": "G2 투자 단계 'Pre-IPO' (Seed~Series C 아님 또는 확인 불가); G5 상장사·대기업 계열 (독립 스타트업 아님); G5 AI 농업 생산성 기술 확인 불가",
       "basis": "프리IPO 완료 (2020-07), 사모펀드 최대주주 — 성숙 기업"
     },
     {
@@ -132,12 +132,12 @@
       "name": "Agtonomy",
       "region": "GLOBAL",
       "gold": true,
-      "pred": true,
-      "ok": true,
+      "pred": false,
+      "ok": false,
       "pred_stage": "Series B",
       "raw_stage": "Series B",
       "stage_quote": "Agtonomy Secures $18 Million Series B to Accelerate Physical AI Adoption in Off-Road Industries",
-      "reason": "통과",
+      "reason": "G5 상장사·대기업 계열 (독립 스타트업 아님)",
       "basis": "Series B $18M (2025-10)"
     },
     {
@@ -172,7 +172,7 @@
       "ok": true,
       "pred_stage": "Series A",
       "raw_stage": "Series A",
-      "stage_quote": "Four Growers just raised a $9 million Series A round led by Basset Capital with participation from Y Combinator, Ospraie Ag Science, and other existing investors.",
+      "stage_quote": "Four Growers has raised $9.0M in total funding. The most recent round was Series A.",
       "reason": "통과",
       "basis": "Series A $9M (2024-11)"
     },
@@ -230,9 +230,9 @@
       "gold": false,
       "pred": false,
       "ok": true,
-      "pred_stage": "Series B",
-      "raw_stage": "Series B",
-      "stage_quote": "FarmWise, a San Francisco-based farm automation startup, raised $45 million in Series B funding.",
+      "pred_stage": "Series C",
+      "raw_stage": "Series C",
+      "stage_quote": "Farmwise's funding and investors\nFarmwise has raised a total funding of $140M over 8 rounds. Its first funding round was on May 24, 2017. Farmwise has 19 institutional investors.\nlock\n| Date of Funding | Funding Amount | Round Name | Post-Money Valuation | Revenue Multiple | Lead Investors | Other Investors |\n ---  ---  --- \n| Nov 15, 2024 | 4013044 | Series C | 5414539 | 4283516 | 2643627 | 3775678 |\n| Jun 20, 2024 | 1374327 | Series B | 5255865 | 2296930 | 7862869 | 9077143 |\n| Feb 15, 2024 | 5784168 | Series B | 8341902 | 5266086 | 1688466 | 5681722 |\nlock",
       "reason": "G1/G3 상장 또는 Exit 완료 근거 있음; G4 중대한 부정 신호: FarmWise wound down operations last year and sold its assets to Taylor Farms.",
       "basis": "Taylor Farms 가 사업 인수 (2025-04) — Exit"
     },
@@ -245,7 +245,7 @@
       "pred_stage": "Series C",
       "raw_stage": "Series C",
       "stage_quote": "Indoor ag startup Iron Ox has raised $50 million in a Series C funding round led by climate-focused investor Breakthrough Energy Ventures.",
-      "reason": "G4 중대한 부정 신호: Iron Ox laid off half its staff, amounting to nearly half its staff, indicating operational distress.",
+      "reason": "G4 중대한 부정 신호: Iron Ox laid off half its staff and downsized operations as reported in multiple sources.",
       "basis": "폐업 (2023) — 중대한 부정 신호"
     }
   ]
