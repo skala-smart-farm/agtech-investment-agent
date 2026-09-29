@@ -1,8 +1,10 @@
 # AI Startup Investment Evaluation Agent
 본 프로젝트는 AgTech 스타트업에 대한 투자 가능성을 자동으로 평가하는 에이전트를 설계하고 구현한 실습 프로젝트입니다.
 
-- 설계 산출물: [docs/design.md](docs/design.md) · PDF `docs/RAG-Design_캠퍼스-X반_김가연+김진녕+문지후+이준희+정승우.pdf`
-- 투자 보고서: `outputs/RAG-Output_캠퍼스-X반_김가연+김진녕+문지후+이준희+정승우.pdf` (5쪽)
+SKALA 울산캠퍼스 2반 1조
+
+- 설계 산출물: [docs/design.md](docs/design.md) · PDF `docs/RAG-Design_울산-2반_김가연+김진녕+문지후+이준희+정승우.pdf`
+- 투자 보고서: `outputs/RAG-Output_울산-2반_김가연+김진녕+문지후+이준희+정승우.pdf` (5쪽)
 
 
 ## Overview

@@ -1,6 +1,6 @@
 {
   "run_date": "2026-09-29",
-  "elapsed_sec": 4.8,
+  "elapsed_sec": 5.2,
   "models": {
     "generator": "gpt-4.1-mini",
     "judge": "gpt-4.1-mini",
@@ -1050,7 +1050,7 @@
   ],
   "report": {
     "pdf": "/Users/jin/Documents/ai-service/capstone-v1/agtech-investment-agent/outputs/investment_report.pdf",
-    "submit_pdf": "/Users/jin/Documents/ai-service/capstone-v1/agtech-investment-agent/outputs/RAG-Output_캠퍼스-X반_김가연+김진녕+문지후+이준희+정승우.pdf",
+    "submit_pdf": "/Users/jin/Documents/ai-service/capstone-v1/agtech-investment-agent/outputs/RAG-Output_울산-2반_김가연+김진녕+문지후+이준희+정승우.pdf",
     "html": "/Users/jin/Documents/ai-service/capstone-v1/agtech-investment-agent/outputs/investment_report.html",
     "markdown": "/Users/jin/Documents/ai-service/capstone-v1/agtech-investment-agent/outputs/investment_report.md",
     "title": "AgTech AI 스타트업 투자 검토 — 투자 권고 대상 없음 (최고점: 메타파머스)",
@@ -1069,7 +1069,7 @@
       "first_section": "SUMMARY",
       "last_section": "REFERENCE"
     },
-    "generated_at": "2026-09-29T18:17:32"
+    "generated_at": "2026-09-29T21:44:36"
   },
   "rag_traces": [
     {
@@ -1349,7 +1349,7 @@
     "[기술·팀] 조벡스: 성숙도 시제품, 창업자 0명, 근거 8건",
     "[경쟁사] 조벡스: 경쟁사 4곳 비교",
     "[투자 판단] 조벡스: 11.2점, UNKNOWN 79% → 보류 (점수 미달(11.2점); 핵심 항목 미달(창업자 0%); 핵심 항목 미달(시장성 25%); 정보 부족(UNKNOWN 79%))",
-    "[보고서] investment_report.pdf 5쪽 (≤5), SUMMARY A4 대비 20%, REFERENCE 13건, 평가표 불일치 0건 → RAG-Output_캠퍼스-X반_김가연+김진녕+문지후+이준희+정승우.pdf"
+    "[보고서] investment_report.pdf 5쪽 (≤5), SUMMARY A4 대비 20%, REFERENCE 13건, 평가표 불일치 0건 → RAG-Output_울산-2반_김가연+김진녕+문지후+이준희+정승우.pdf"
   ],
   "sources_collected": 596,
   "llm_cost": {

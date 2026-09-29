@@ -78,6 +78,7 @@ cache:
   embeddings: true                     # 문서 임베딩 캐시 (재색인 비용 방지)
 
 submission:                            # 제출 파일명: RAG-Output_{campus}-{class}_{이름 가나다순}.pdf
-  campus: "캠퍼스"                      # TODO: 실제 캠퍼스명으로 바꾸기
-  class: "X반"                          # TODO: 실제 반으로 바꾸기
+  campus: "울산"                        # SKALA 울산캠퍼스
+  class: "2반"
+  team: "1조"
   members: [김가연, 김진녕, 문지후, 이준희, 정승우]
