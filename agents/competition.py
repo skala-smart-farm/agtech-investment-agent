@@ -1,6 +1,10 @@
 """🥊 경쟁사 비교 에이전트.
 
-기술·팀 분석 결과(차별점 주장)를 받아, 국내·해외 경쟁사와 실제로 비교해 차별성과 진입장벽을 검증한다.
+기술·팀 분석 결과(제품·핵심 기술·차별점 주장)를 받아, 국내·해외 경쟁사와 실제로 비교해 차별성과 진입장벽을 검증한다.
+- 경쟁사는 분야 이름("애그테크")이 아니라 대상의 **제품 유형**(예: 온실 과채류 수확 로봇)으로 찾는다.
+  LLM 이 제품 설명에서 제품 유형과 검색 질의를 정하고(검색 계획), 에이전트가 그 질의로 검색한다.
+- 대상 회사 기사 본문에 경쟁사로 직접 언급된 회사(예: "영국 더그투스 등 … 외국 경쟁사")는 코드로 뽑아 반드시 검토한다.
+- 경쟁사 행마다 근거 id 를 달고, 이름이 근거에 없는 경쟁사는 버린다. 대상의 우위는 단정하지 않고 "회사 측 주장"으로 쓴다.
 """
 from __future__ import annotations
 
@@ -8,29 +12,111 @@ import re
 
 from pydantic import BaseModel, Field
 
+from agents.tech import evidence_blocks
 from core.config import get_segment
 from core.llm import structured
 from core.prompts import render
+from tools.grounding import norm
 from tools.sources import SourceRegistry
 from tools.web_search import web_search
 
 AGENT = "competition"
+MAX_QUERIES = 4  # 검색 계획 질의 상한 (+ "{회사} 경쟁사" 1건)
+
+RIVAL_TERMS = re.compile(r"경쟁|competitor|rival|대비|비교|점유율|market share", re.I)  # 본문 문단 고르기용
+RIVAL = re.compile(r"경쟁\s?(?:사|업체|기업)|competitors?|rivals?", re.I)                  # 경쟁사를 말하는 문장
+_COUNTRY = "영국|미국|네덜란드|이스라엘|일본|중국|독일|프랑스|호주|스페인|벨기에|캐나다|이탈리아|덴마크|노르웨이|스웨덴|대만|싱가포르|인도"
+_NAME = r"[가-힣A-Za-z][가-힣A-Za-z0-9&\-]{1,20}"
+# 경쟁 문장 안의 회사 이름: "영국 더그투스", "더그투스 등 … 경쟁사", "경쟁사인 ○○", "competitors such as Tevel"
+MENTION = [re.compile(rf"(?:{_COUNTRY})의?\s(?P<name>{_NAME})"),
+           re.compile(rf"(?<![가-힣A-Za-z])(?P<name>{_NAME})\s?등\s?[^.]{{0,30}}?경쟁\s?(?:사|업체|기업)"),
+           re.compile(rf"경쟁\s?(?:사|업체|기업)(?:인|로는|으로는)\s(?P<name>{_NAME}(?:\s?,\s?{_NAME}){{0,4}})"),
+           re.compile(r"(?:competitors?|rivals?)(?: such as| like| including)? (?P<name>[A-Z][\w&\-]+(?: [A-Z][\w&\-]+)?"
+                      r"(?:(?:, | and )[A-Z][\w&\-]+(?: [A-Z][\w&\-]+)?){0,4})")]
+LIST_SEP = re.compile(r"\s?,\s?|\s(?:and|or)\s")
+NOT_COMPANY = {"시장", "기업", "업체", "회사", "스타트업", "경쟁사", "경쟁", "제품", "기술", "정부", "농가", "농업", "외국", "해외",
+               "국내", "업계", "로봇", "등", "대비", "비슷한", "유사한", "다른", "기존", "현지", "The", "Other", "Many"}
+PARTICLE = re.compile(r"(?<=[가-힣]{2})(?:보다|에서|으로|와|과|의|는|은|를|을|도|로|가|이)$")
+# 대상이 경쟁사보다 낫다는 단정 (검증 전에는 쓰지 않는다). "주장"으로 출처를 밝힌 문장은 허용
+SUPERIOR = re.compile(r"앞선|앞서|우위|우월|뛰어나|능가|압도|선도|더 낫|차별화된다|outperform|superior|ahead of", re.I)
+CITE = re.compile(r"\[[WD][0-9a-f]{5}")
+
+
+def _plain(s: str | None) -> str:
+    """근거 id 표기([W..])를 뺀 문장 (검색 계획 입력용)."""
+    return re.sub(r"\[[^\]]*\]", "", s or "").strip()
+
+
+def _asserts(text: str) -> bool:
+    """출처('주장')를 밝히지 않은 우열 단정이 있으면 True."""
+    return bool(SUPERIOR.search(text or "")) and "주장" not in text
+
+
+def mentioned_competitors(reg: SourceRegistry, ids: list[str], keys: list[str]) -> list[dict]:
+    """대상 회사가 나오는 근거 본문에서 '경쟁' 문장에 이름이 나온 회사 → [{name, evidence_ids, quote}]."""
+    nk = [norm(k) for k in keys if k and len(norm(k)) >= 2]
+    found: dict[str, dict] = {}
+    for sid in dict.fromkeys(ids):
+        text = reg.text(sid)
+        if not text or not any(k in norm(text) for k in nk):
+            continue
+        for sent in re.split(r"(?<=[.!?])\s+", re.sub(r"\s+", " ", text)):
+            if not RIVAL.search(sent):
+                continue
+            for pat in MENTION:
+                for part in (p for m in pat.finditer(sent) for p in LIST_SEP.split(m.group("name"))):
+                    nm = PARTICLE.sub("", part.strip())
+                    n_ = norm(nm)
+                    if nm in NOT_COMPANY or len(n_) < 2 or any(k in n_ or n_ in k for k in nk):
+                        continue
+                    row = found.setdefault(n_, {"name": nm, "evidence_ids": [], "quote": sent.strip()[:200]})
+                    if sid not in row["evidence_ids"]:
+                        row["evidence_ids"].append(sid)
+    return list(found.values())
+
+
+class SearchPlan(BaseModel):
+    product_type_ko: str = Field(description="대상 제품 유형 (예: '온실 과채류 수확·수분 로봇')")
+    product_type_en: str = Field(description="영문 제품 유형 (예: 'greenhouse fruit harvesting robot')")
+    queries: list[str] = Field(description="경쟁사 검색 질의 2~4개 (국내 1개 이상·해외 1개 이상, 언급된 경쟁사 이름 포함)")
 
 
 class Competitor(BaseModel):
     name: str
     country: str
-    offering: str = Field(description="제품·접근 방식")
+    offering: str = Field(description="제품·접근 방식 (근거 id)")
     scale: str = Field(description="투자 단계·매출·고객 규모 등 알려진 규모, 모르면 '확인 불가'")
-    vs_target: str = Field(description="대상 스타트업과 비교한 강점·약점 (근거 id)")
+    vs_target: str = Field(description="중립 비교 한 문장: 경쟁사 사실 [근거 id] / 대상은 '회사 측 주장: ~' [근거 id]")
+    evidence_ids: list[str] = Field(description="이 경쟁사 이름이 실제로 나오는 근거 id (1개 이상)")
 
 
 class CompetitionAnalysis(BaseModel):
     competitors: list[Competitor] = Field(description="3~5곳")
-    differentiation: str = Field(description="대상 스타트업의 실제 차별성 판단 (근거 id)")
+    differentiation: str = Field(description="대상의 차별성 판단: 제3자 근거로 확인된 것과 회사 측 주장을 구분 (근거 id)")
     entry_barriers: str = Field(description="특허·데이터·네트워크 효과·인증 등 진입장벽 (근거 id), 약하면 약하다고 쓴다")
     threats: list[str] = Field(description="경쟁 위협 (근거 id)")
     evidence_ids: list[str]
+
+
+def _ground(res: CompetitionAnalysis, ids: list[str], reg: SourceRegistry, named: list[dict]) -> list[dict]:
+    """이름이 근거에 실제로 나오는 경쟁사만 남기고, 행마다 근거 id 를 맞춘다 (지어낸 경쟁사 차단).
+    LLM 이 근거 id 를 비우면 대상 기사 속 언급(named) → 나머지 근거 순으로 채운다."""
+    named_ids = {norm(m["name"]): m["evidence_ids"] for m in named}
+    rows = []
+    for c in res.competitors:
+        keys = [norm(x) for x in re.split(r"[()/,·]", c.name) if len(norm(x)) >= 2]
+        found = [i for i in ids if any(k in norm(reg.text(i)) for k in keys)]
+        first = [i for k in keys for i in named_ids.get(k, []) if i in found]
+        ev = [i for i in c.evidence_ids if i in found] or list(dict.fromkeys(first + found))[:3]
+        if not ev:
+            continue
+        row = {**c.model_dump(), "evidence_ids": ev}
+        if _asserts(row["vs_target"]):
+            row["vs_target"] = "회사 측 주장(제3자 비교 근거 없음): " + row["vs_target"]
+        if not CITE.search(row["vs_target"]):  # 표 칸에도 출처가 이어지게
+            row["vs_target"] += f" [{', '.join(ev[:2])}]"
+        rows.append(row)
+    return rows
 
 
 def competition_node(state: dict) -> dict:
@@ -38,20 +124,48 @@ def competition_node(state: dict) -> dict:
     reg = SourceRegistry(state.get("registry"))
     seg = get_segment(c["segment_id"])
     name = c["official_name"]
+    names = [name, c.get("name_en") or ""]
+    # 1) 대상 회사 근거 본문에 경쟁사로 직접 언급된 회사 (기술·팀 근거 전체 + 적격성 근거)
+    own = list(dict.fromkeys(c.get("evidence_ids", []) + tech.get("pool_ids", [])))
+    named = mentioned_competitors(reg, own, names)
+    # 2) 검색 계획: 제품 유형을 정하고 그 유형의 경쟁사를 찾는 질의를 LLM 이 만든다
+    plan: SearchPlan = structured(SearchPlan).invoke(render(
+        "competition_plan", name=name, segment=seg["name"], product=_plain(tech.get("product")),
+        core_technology=_plain(tech.get("core_technology")),
+        named="\n".join(f"- {m['name']}: \"{m['quote']}\"" for m in named) or "(없음)"))
+    queries = list(dict.fromkeys(q.strip() for q in plan.queries if q.strip()))[:MAX_QUERIES]
     ids = []
-    # 제품 기능이 겹치는 경쟁사를 찾도록 기술·팀 분석의 제품 설명을 검색어에 쓴다 (분야 이름만 쓰면 엉뚱한 기업이 걸림)
-    product = re.sub(r"\[[^\]]*\]", "", tech.get("product", ""))[:60]
-    ids += web_search(f"{product} 국내 스타트업 경쟁", reg, AGENT, topic="general", recent=False)
-    ids += web_search(f"{seg['ko']} 스타트업 경쟁 기업 비교", reg, AGENT, topic="news", recent=False)
+    for q in queries:
+        ids += web_search(q, reg, AGENT, topic="general", recent=False)
     ids += web_search(f"{name} 경쟁사", reg, AGENT, topic="news", recent=False, raw=True)
-    ids += web_search(f"{seg['en']} startups competitors", reg, AGENT, topic="general", recent=False)
-    ids = list(dict.fromkeys(ids + tech.get("evidence_ids", [])))
-    res: CompetitionAnalysis = structured(CompetitionAnalysis).invoke(
-        render("competition", name=name, segment=seg["name"], product=tech.get("product", ""),
-               differentiators="\n".join(tech.get("differentiators", [])), evidence=reg.brief(ids, 600)))
+    ids = list(dict.fromkeys(ids + tech.get("evidence_ids", []) + [i for m in named for i in m["evidence_ids"]]))
+    # 3) 근거: 스니펫 + 대상·경쟁사 이름이 나오는 기사 본문의 '경쟁·비교' 문단
+    keys = names + [m["name"] for m in named]
+    evidence = "\n\n".join(evidence_blocks(reg, ids, keys, terms=RIVAL_TERMS, max_chars=600, boost=None).values())
+    ctx = dict(name=name, segment=seg["name"], product=tech.get("product", ""), product_type=plan.product_type_ko,
+               differentiators="\n".join(tech.get("differentiators", [])),
+               named="\n".join(f"- {m['name']} [{', '.join(m['evidence_ids'])}]: \"{m['quote']}\"" for m in named)
+               or "(없음)", evidence=evidence)
+    llm = structured(CompetitionAnalysis)
+    res: CompetitionAnalysis = llm.invoke(render("competition", **ctx, feedback=""))
+    bad = [x.name for x in res.competitors if _asserts(x.vs_target)] + (
+        ["differentiation"] if _asserts(res.differentiation) else [])
+    if bad:  # 우열 단정이 있으면 한 번만 고쳐 쓰게 한다 (남으면 _ground 가 '회사 측 주장'으로 감싼다)
+        res = llm.invoke(render("competition", **ctx, feedback=(
+            f"다음 칸에 '앞선다·우위·뛰어나다' 같은 우열 단정이 있다: {', '.join(bad)}. "
+            "경쟁사는 근거에 적힌 사실로, 대상의 강점은 '회사 측 주장: ~' 으로 고쳐 써라.")))
     out = res.model_dump()
-    out["evidence_ids"] = [i for i in dict.fromkeys(res.evidence_ids) if i in set(ids)]
+    out["competitors"] = _ground(res, ids, reg, named)
+    if _asserts(out["differentiation"]):
+        out["differentiation"] = "회사 측 주장(제3자 비교 근거 없음): " + out["differentiation"]
+    out["evidence_ids"] = [i for i in dict.fromkeys(res.evidence_ids + [i for r in out["competitors"]
+                                                                        for i in r["evidence_ids"]]) if i in set(ids)]
     out["pool_ids"] = ids
-    msg = f"[경쟁사] {name}: 경쟁사 {len(res.competitors)}곳 비교"
+    out["search_plan"] = {"product_type_ko": plan.product_type_ko, "product_type_en": plan.product_type_en,
+                          "queries": queries}
+    out["mentioned_competitors"] = named
+    msg = (f"[경쟁사] {name}: 제품 유형 '{plan.product_type_ko}', 검색 {len(queries) + 1}건, "
+           f"근거 속 경쟁사 {', '.join(m['name'] for m in named) or '없음'} → 경쟁사 {len(out['competitors'])}곳 비교"
+           f"{' (우열 단정 고쳐 씀)' if bad else ''}")
     print(msg)
     return {"registry": reg.data, "competition": out, "log": [msg]}
