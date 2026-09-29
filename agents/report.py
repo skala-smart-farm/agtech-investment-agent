@@ -299,7 +299,8 @@ def _consistency_problems(draft: _Body, target: dict, evals: list[dict], run_dat
             if e is None:
                 continue
             rows = e["scorecard"]["rows"]
-            probs += _claim_problems(f"{note.why_not} {note.recheck}", {r["qid"]: r["answer"] for r in rows}, f"[{e['name']}] ")
+            # 재검토 조건은 '확인되면 재평가'처럼 확인할 일을 적는 칸이라 단정 검사는 보류 사유에만 한다
+            probs += _claim_problems(note.why_not, {r["qid"]: r["answer"] for r in rows}, f"[{e['name']}] ")
         missing = [e["name"] for e in evals if not any(_same(n.name, x) for n in draft.candidates for x in _names(e))]
         if missing:
             probs.append(f"candidates 에 {', '.join(missing)} 가 없다 — 심층 평가한 후보마다 하나씩 써라")
