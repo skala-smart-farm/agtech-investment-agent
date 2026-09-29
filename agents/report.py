@@ -147,7 +147,7 @@ def _pool(state: dict, evals: list[dict], screened: list[dict], cfg, invested: b
     return {
         "rounds": rounds, "discovered": discovered, "disc_split": disc_split,
         "screened": len(screened), "scr_split": split(screened),
-        "rejected": [(r.get("official_name") or r["name"], re.sub(r"^G\d(?:/G\d)?\s*", "", r.get("reason") or ""))
+        "rejected": [(r.get("official_name") or r["name"], re.sub(r"(^|;\s*)G\d(?:/G\d)?\s*", r"\1", r.get("reason") or ""))
                      for r in screened if not r.get("eligible")],
         "eligible": len(eligible), "el_split": split(eligible),
         "evaluated": len(evals), "ev_split": split([e.get("profile") or e for e in evals]),
@@ -391,6 +391,10 @@ def _competitor_rows(target: dict, reg: SourceRegistry, notes: list[CompetitorNo
         if not c2_yes and _superiority(vs):
             vs = f"(회사 측 주장, 제3자 비교 근거 없음) {vs}"
         row = {**c, "vs_target": vs, "cite": f"[{', '.join(hit)}]" if hit else ""}
+        tkeys = [norm(x) for x in _names(target) if len(norm(x)) >= 2]
+        if hit and all(any(k in texts[i] for k in tkeys) for i in hit):
+            # 경쟁사 이름이 대상 회사 기사에만 지나가듯 나오면, 규모·국가 수치는 그 경쟁사의 사실로 확인할 수 없다
+            row["scale"] = "확인 불가 (대상 회사 기사에서 이름만 언급)"
         rows.append(row)
         if hit:
             found.append(row)

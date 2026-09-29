@@ -72,6 +72,7 @@ report:
   max_pages: 5
   summary_max_chars: 560               # SUMMARY 글자 수 상한 (A4 절반 이내는 렌더링 후 높이로 따로 검증)
   output_dir: outputs
+  run_cost_usd: 0.6                    # 새로 평가할 때 1회 LLM 비용(gpt-4.1-mini, 심층 평가 10곳 실측 약 $0.58) — README 표기용
 
 cache:
   dir: replay                          # 제출본 재현용 캐시 (검색 결과·발굴 스냅샷·LLM 응답을 저장소에 포함)

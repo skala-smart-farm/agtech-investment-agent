@@ -47,12 +47,16 @@ def _elig_stale() -> bool:
 
 def _pc_line() -> str:
     d = _j("outputs/eval/positive_control.json")
-    rows = d.get("rows") or d.get("results") or []
+    rows = d if isinstance(d, list) else (d.get("rows") or d.get("results") or [])
     if not rows:
         return "(미실행)"
     inv = [r for r in rows if r.get("decision") == "투자"]
-    best = max(rows, key=lambda r: r.get("total", 0))
-    return (f"{len(rows)}곳 중 투자 {len(inv)}곳 · 최고 {best.get('name')} {best.get('total')}점"
+    scored = [r for r in rows if r.get("total") is not None]
+    other = [f"{r['name']} {r['decision']}" for r in rows if r.get("total") is None]
+    best = max(scored, key=lambda r: r["total"]) if scored else None
+    return (f"{len(rows)}곳 중 투자 {len(inv)}곳"
+            + (f" · 최고 {best['name']} {best['total']}점" if best else "")
+            + (f" · {', '.join(other)}" if other else "")
             + ("" if inv else " — 공개 정보만으로는 기준(70점)을 넘지 못함"))
 
 

@@ -1,6 +1,6 @@
 {
   "run_date": "2026-09-30",
-  "elapsed_sec": 58.6,
+  "elapsed_sec": 7.7,
   "models": {
     "generator": "gpt-4.1-mini",
     "judge": "gpt-4.1-mini",
@@ -3070,14 +3070,11 @@
       "summary_ratio_of_a4": 0.157,
       "summary_ok": true,
       "summary_rule_violations": [],
-      "scorecard_consistency_violations": [
-        "[메타파머스] '특허 등록' — C1(특허)는 평가표에서 UNKNOWN 이므로 확인됐다고 쓰지 마라",
-        "[에임비랩] '특허 등록' — C1(특허)는 평가표에서 UNKNOWN 이므로 확인됐다고 쓰지 마라"
-      ],
-      "references": 35,
+      "scorecard_consistency_violations": [],
+      "references": 36,
       "reference_groups": {
         "기관 보고서": 2,
-        "학술 논문": 1,
+        "학술 논문": 2,
         "웹페이지": 32
       },
       "limitations": 4,
@@ -3085,7 +3082,7 @@
       "first_section": "SUMMARY",
       "last_section": "REFERENCE"
     },
-    "generated_at": "2026-09-30T05:07:27"
+    "generated_at": "2026-09-30T05:08:48"
   },
   "rag_traces": [
     {
@@ -4059,15 +4056,15 @@
     "[기술·팀] 바르카: 성숙도 시제품, 창업자 1명(전현균(대표)), 성장 신호 2건, 근거 9건",
     "[경쟁사] 바르카: 제품 유형 '농산물 생산량 예측 솔루션', 검색 4건, 근거 속 경쟁사 없음 → 경쟁사 4곳 비교",
     "[투자 판단] 바르카: 22.5점, UNKNOWN 79% → 보류 (점수 미달(22.5점); 핵심 항목 미달(창업자 25%); 정보 부족(UNKNOWN 79%))",
-    "[보고서] investment_report.pdf 5쪽 (≤5), SUMMARY A4 대비 16%, REFERENCE 35건, 평가표 불일치 2건 → RAG-Output_울산-2반_김가연+김진녕+문지후+이준희+정승우.pdf"
+    "[보고서] investment_report.pdf 5쪽 (≤5), SUMMARY A4 대비 16%, REFERENCE 36건, 평가표 불일치 0건 → RAG-Output_울산-2반_김가연+김진녕+문지후+이준희+정승우.pdf"
   ],
   "sources_collected": 889,
   "failed_searches": [],
   "llm_cost": {
-    "api_calls": 3,
-    "cache_hits": 205,
-    "input_tokens": 99313,
-    "output_tokens": 5852,
-    "usd": 0.0412
+    "api_calls": 0,
+    "cache_hits": 206,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "usd": 0.0
   }
 }

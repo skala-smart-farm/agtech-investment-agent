@@ -1,0 +1,150 @@
+[
+  {
+    "name": "Source.ag",
+    "eligible": true,
+    "stage": "Series B",
+    "decision": "보류",
+    "total": 15.0,
+    "threshold": 70,
+    "unknown_ratio": 0.875,
+    "reasons": [
+      "점수 미달(15.0점)",
+      "핵심 항목 미달(창업자 0%)",
+      "정보 부족(UNKNOWN 88%)"
+    ],
+    "rejected_yes": [
+      {
+        "qid": "M3",
+        "reason": "인용 주변(±300자)에 회사명이 없음 (업계 일반론이 아니라 이 회사 이야기여야 함)"
+      },
+      {
+        "qid": "M4",
+        "reason": "인용 주변(±300자)에 회사명이 없음 (업계 일반론이 아니라 이 회사 이야기여야 함)"
+      }
+    ],
+    "unknown_qids": [
+      "F1",
+      "F2",
+      "F3",
+      "F4",
+      "M3",
+      "M4",
+      "P1",
+      "P2",
+      "P3",
+      "P4",
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "D2",
+      "D3",
+      "D4"
+    ],
+    "dims": {
+      "founder": "0/4",
+      "market": "2/4",
+      "product": "0/4",
+      "competition": "0/4",
+      "traction": "0/4",
+      "deal": "1/4"
+    },
+    "sensitivity": {
+      "60": "보류",
+      "70": "보류",
+      "80": "보류"
+    },
+    "failed_searches": 0
+  },
+  {
+    "name": "Agtonomy",
+    "eligible": false,
+    "stage": "Series B",
+    "decision": "적격성 탈락",
+    "total": null,
+    "unknown_ratio": null,
+    "reasons": [
+      "G5 상장사·대기업 계열 (독립 스타트업 아님)"
+    ],
+    "failed_searches": 0
+  },
+  {
+    "name": "아이오크롭스",
+    "eligible": true,
+    "stage": "Pre-A",
+    "decision": "보류",
+    "total": 33.7,
+    "threshold": 70,
+    "unknown_ratio": 0.625,
+    "reasons": [
+      "점수 미달(33.7점)",
+      "핵심 항목 미달(시장성 0%)",
+      "정보 부족(UNKNOWN 62%)"
+    ],
+    "rejected_yes": [
+      {
+        "qid": "M1",
+        "reason": "인용문이 근거 본문에서 확인되지 않음"
+      },
+      {
+        "qid": "M2",
+        "reason": "인용문이 근거 본문에서 확인되지 않음"
+      },
+      {
+        "qid": "M3",
+        "reason": "인용 주변(±300자)에 회사명이 없음 (업계 일반론이 아니라 이 회사 이야기여야 함)"
+      },
+      {
+        "qid": "M4",
+        "reason": "인용문이 근거 본문에서 확인되지 않음"
+      },
+      {
+        "qid": "P2",
+        "reason": "회사 측 발언·계획(제3자 근거 아님)"
+      },
+      {
+        "qid": "C2",
+        "reason": "인용문이 근거 본문에서 확인되지 않음"
+      },
+      {
+        "qid": "R2",
+        "reason": "최근 24개월 이내 근거 아님"
+      }
+    ],
+    "unknown_qids": [
+      "F3",
+      "F4",
+      "M1",
+      "M2",
+      "M3",
+      "M4",
+      "P2",
+      "C1",
+      "C2",
+      "C4",
+      "R1",
+      "R2",
+      "D2",
+      "D3",
+      "D4"
+    ],
+    "dims": {
+      "founder": "2/4",
+      "market": "0/4",
+      "product": "3/4",
+      "competition": "1/4",
+      "traction": "2/4",
+      "deal": "0/4"
+    },
+    "sensitivity": {
+      "60": "보류",
+      "70": "보류",
+      "80": "보류"
+    },
+    "failed_searches": 0
+  }
+]

@@ -26,14 +26,14 @@ def save_graph_image(app) -> str:
     """README Architecture 이미지 2종.
     - docs/architecture.png          : 설계서와 같은 한글 설명 그림
     - docs/architecture_langgraph.png: 컴파일된 LangGraph 가 직접 그린 그림 (코드와 설계가 같은지 확인용)"""
-    from docs.build_design import MAIN_MERMAID
+    from docs.build_design import _main_mermaid
     from report.mermaid import mermaid_to_png
 
     mmd = app.get_graph().draw_mermaid()
     path("docs/architecture_langgraph.mmd").write_text(mmd, encoding="utf-8")
     mermaid_to_png(mmd, path("docs/architecture_langgraph.png"))
     out = path("docs/architecture.png")
-    mermaid_to_png(MAIN_MERMAID, out)
+    mermaid_to_png(_main_mermaid(get_config()), out)
     return str(out)
 
 
