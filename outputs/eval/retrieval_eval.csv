@@ -1,39 +1,39 @@
-set,retriever,embedding,Hit@1,Hit@3,Hit@5,MRR@5,query_ms,load_or_build_sec
-natural,Kiwi BM25,-,0.5,0.55,0.575,0.526,0.6,
-keyword,Kiwi BM25,-,0.7,0.8,0.867,0.761,0.3,
-natural,Dense,BAAI/bge-m3,0.6,0.925,0.95,0.759,22.2,13.8
-keyword,Dense,BAAI/bge-m3,0.867,0.933,0.967,0.903,20.5,13.8
-natural,Hybrid 0.5:0.5,BAAI/bge-m3,0.475,0.8,0.925,0.645,22.1,
-keyword,Hybrid 0.5:0.5,BAAI/bge-m3,0.7,0.933,0.933,0.811,21.1,
-natural,Hybrid 0.3:0.7,BAAI/bge-m3,0.575,0.8,0.975,0.716,21.8,
-keyword,Hybrid 0.3:0.7,BAAI/bge-m3,0.8,0.967,0.967,0.878,20.8,
-natural,Dense,nlpai-lab/KURE-v1,0.8,0.975,0.975,0.879,21.5,13.7
-keyword,Dense,nlpai-lab/KURE-v1,0.8,0.9,0.967,0.858,20.7,13.7
-natural,Hybrid 0.5:0.5,nlpai-lab/KURE-v1,0.5,0.9,0.95,0.678,22.0,
-keyword,Hybrid 0.5:0.5,nlpai-lab/KURE-v1,0.7,0.933,0.967,0.818,21.1,
-natural,Hybrid 0.3:0.7,nlpai-lab/KURE-v1,0.6,0.925,0.975,0.753,22.0,
-keyword,Hybrid 0.3:0.7,nlpai-lab/KURE-v1,0.733,0.967,1.0,0.847,21.0,
-natural,Dense,intfloat/multilingual-e5-large,0.6,0.8,0.8,0.692,21.4,13.3
-keyword,Dense,intfloat/multilingual-e5-large,0.767,0.9,0.933,0.834,20.4,13.3
-natural,Hybrid 0.5:0.5,intfloat/multilingual-e5-large,0.525,0.675,0.775,0.614,22.2,
-keyword,Hybrid 0.5:0.5,intfloat/multilingual-e5-large,0.7,0.9,0.933,0.803,21.5,
-natural,Hybrid 0.3:0.7,intfloat/multilingual-e5-large,0.55,0.65,0.775,0.626,22.2,
-keyword,Hybrid 0.3:0.7,intfloat/multilingual-e5-large,0.767,0.9,0.967,0.847,21.1,
-natural,Dense,dragonkue/snowflake-arctic-embed-l-v2.0-ko,0.775,0.975,0.975,0.871,21.4,12.9
-keyword,Dense,dragonkue/snowflake-arctic-embed-l-v2.0-ko,0.767,0.933,0.967,0.858,20.4,12.9
-natural,Hybrid 0.5:0.5,dragonkue/snowflake-arctic-embed-l-v2.0-ko,0.525,0.825,0.95,0.682,22.0,
-keyword,Hybrid 0.5:0.5,dragonkue/snowflake-arctic-embed-l-v2.0-ko,0.667,0.9,0.967,0.8,21.0,
-natural,Hybrid 0.3:0.7,dragonkue/snowflake-arctic-embed-l-v2.0-ko,0.6,0.9,0.975,0.748,22.0,
-keyword,Hybrid 0.3:0.7,dragonkue/snowflake-arctic-embed-l-v2.0-ko,0.767,0.933,1.0,0.859,21.1,
-natural,Dense,Qwen/Qwen3-Embedding-0.6B,0.675,0.875,0.95,0.784,39.7,22.2
-keyword,Dense,Qwen/Qwen3-Embedding-0.6B,0.733,0.933,0.933,0.822,33.0,22.2
-natural,Hybrid 0.5:0.5,Qwen/Qwen3-Embedding-0.6B,0.525,0.725,0.875,0.641,38.9,
-keyword,Hybrid 0.5:0.5,Qwen/Qwen3-Embedding-0.6B,0.7,0.9,0.9,0.794,33.5,
-natural,Hybrid 0.3:0.7,Qwen/Qwen3-Embedding-0.6B,0.525,0.775,0.95,0.68,39.2,
-keyword,Hybrid 0.3:0.7,Qwen/Qwen3-Embedding-0.6B,0.733,0.9,0.967,0.824,33.3,
-natural,Dense,intfloat/multilingual-e5-small,0.475,0.575,0.6,0.531,5.6,7.3
-keyword,Dense,intfloat/multilingual-e5-small,0.533,0.7,0.733,0.619,5.4,7.3
-natural,Hybrid 0.5:0.5,intfloat/multilingual-e5-small,0.45,0.575,0.625,0.517,6.3,
-keyword,Hybrid 0.5:0.5,intfloat/multilingual-e5-small,0.633,0.833,0.833,0.722,6.1,
-natural,Hybrid 0.3:0.7,intfloat/multilingual-e5-small,0.425,0.575,0.625,0.503,6.3,
-keyword,Hybrid 0.3:0.7,intfloat/multilingual-e5-small,0.567,0.733,0.733,0.644,5.8,
+set,retriever,embedding,Hit@1,Hit@3,Hit@4,Hit@5,Hit@8,MRR@4,MRR@5,query_ms,load_or_build_sec
+natural,Kiwi BM25,-,0.5,0.55,0.55,0.575,0.575,0.521,0.526,0.7,
+keyword,Kiwi BM25,-,0.7,0.8,0.867,0.867,0.867,0.761,0.761,0.4,
+natural,Dense,BAAI/bge-m3,0.6,0.925,0.925,0.95,0.95,0.754,0.759,0.4,0.0
+keyword,Dense,BAAI/bge-m3,0.867,0.933,0.967,0.967,1.0,0.903,0.903,0.4,0.0
+natural,Hybrid 0.5:0.5,BAAI/bge-m3,0.475,0.825,0.9,0.925,0.975,0.648,0.653,0.9,
+keyword,Hybrid 0.5:0.5,BAAI/bge-m3,0.7,0.933,0.967,0.967,1.0,0.825,0.825,0.7,
+natural,Hybrid 0.3:0.7,BAAI/bge-m3,0.6,0.875,0.95,0.95,0.95,0.735,0.735,0.9,
+keyword,Hybrid 0.3:0.7,BAAI/bge-m3,0.833,1.0,1.0,1.0,1.0,0.906,0.906,0.7,
+natural,Dense,nlpai-lab/KURE-v1,0.8,0.975,0.975,0.975,0.975,0.879,0.879,0.3,0.0
+keyword,Dense,nlpai-lab/KURE-v1,0.8,0.9,0.9,0.967,1.0,0.844,0.858,0.2,0.0
+natural,Hybrid 0.5:0.5,nlpai-lab/KURE-v1,0.5,0.9,0.95,0.95,0.975,0.696,0.696,1.0,
+keyword,Hybrid 0.5:0.5,nlpai-lab/KURE-v1,0.7,0.967,0.967,0.967,1.0,0.828,0.828,0.7,
+natural,Hybrid 0.3:0.7,nlpai-lab/KURE-v1,0.65,0.925,0.975,0.975,0.975,0.787,0.787,0.9,
+keyword,Hybrid 0.3:0.7,nlpai-lab/KURE-v1,0.767,1.0,1.0,1.0,1.0,0.878,0.878,0.7,
+natural,Dense,intfloat/multilingual-e5-large,0.6,0.8,0.8,0.8,0.85,0.692,0.692,0.3,0.0
+keyword,Dense,intfloat/multilingual-e5-large,0.767,0.9,0.9,0.933,0.967,0.828,0.834,0.2,0.0
+natural,Hybrid 0.5:0.5,intfloat/multilingual-e5-large,0.525,0.675,0.75,0.775,0.825,0.615,0.62,0.9,
+keyword,Hybrid 0.5:0.5,intfloat/multilingual-e5-large,0.7,0.9,0.933,0.933,0.967,0.803,0.803,0.7,
+natural,Hybrid 0.3:0.7,intfloat/multilingual-e5-large,0.55,0.675,0.775,0.8,0.85,0.629,0.634,1.9,
+keyword,Hybrid 0.3:0.7,intfloat/multilingual-e5-large,0.767,0.9,0.933,0.967,0.967,0.842,0.848,0.7,
+natural,Dense,dragonkue/snowflake-arctic-embed-l-v2.0-ko,0.775,0.975,0.975,0.975,0.975,0.871,0.871,0.3,0.0
+keyword,Dense,dragonkue/snowflake-arctic-embed-l-v2.0-ko,0.767,0.933,0.967,0.967,0.967,0.858,0.858,0.3,0.0
+natural,Hybrid 0.5:0.5,dragonkue/snowflake-arctic-embed-l-v2.0-ko,0.525,0.875,0.925,0.95,0.975,0.692,0.697,1.0,
+keyword,Hybrid 0.5:0.5,dragonkue/snowflake-arctic-embed-l-v2.0-ko,0.667,0.933,0.933,0.933,1.0,0.794,0.794,0.7,
+natural,Hybrid 0.3:0.7,dragonkue/snowflake-arctic-embed-l-v2.0-ko,0.65,0.925,0.95,0.975,0.975,0.777,0.782,0.9,
+keyword,Hybrid 0.3:0.7,dragonkue/snowflake-arctic-embed-l-v2.0-ko,0.767,0.933,0.933,0.967,0.967,0.85,0.857,0.7,
+natural,Dense,Qwen/Qwen3-Embedding-0.6B,0.675,0.875,0.925,0.95,0.95,0.779,0.784,0.3,0.0
+keyword,Dense,Qwen/Qwen3-Embedding-0.6B,0.733,0.933,0.933,0.933,0.967,0.822,0.822,0.2,0.0
+natural,Hybrid 0.5:0.5,Qwen/Qwen3-Embedding-0.6B,0.525,0.775,0.875,0.875,0.9,0.65,0.65,1.0,
+keyword,Hybrid 0.5:0.5,Qwen/Qwen3-Embedding-0.6B,0.7,0.9,0.9,0.933,0.967,0.794,0.801,0.7,
+natural,Hybrid 0.3:0.7,Qwen/Qwen3-Embedding-0.6B,0.525,0.85,0.9,0.95,0.95,0.683,0.693,0.9,
+keyword,Hybrid 0.3:0.7,Qwen/Qwen3-Embedding-0.6B,0.733,0.9,0.967,0.967,0.967,0.828,0.828,0.6,
+natural,Dense,intfloat/multilingual-e5-small,0.475,0.575,0.6,0.6,0.625,0.531,0.531,0.2,0.0
+keyword,Dense,intfloat/multilingual-e5-small,0.533,0.7,0.733,0.733,0.767,0.619,0.619,0.1,0.0
+natural,Hybrid 0.5:0.5,intfloat/multilingual-e5-small,0.45,0.625,0.625,0.625,0.675,0.521,0.521,0.8,
+keyword,Hybrid 0.5:0.5,intfloat/multilingual-e5-small,0.633,0.833,0.833,0.833,0.9,0.728,0.728,0.5,
+natural,Hybrid 0.3:0.7,intfloat/multilingual-e5-small,0.425,0.575,0.6,0.6,0.625,0.498,0.498,0.8,
+keyword,Hybrid 0.3:0.7,intfloat/multilingual-e5-small,0.567,0.733,0.733,0.733,0.767,0.644,0.644,0.5,
