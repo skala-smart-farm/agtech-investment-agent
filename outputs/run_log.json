@@ -1,6 +1,6 @@
 {
   "run_date": "2026-09-30",
-  "elapsed_sec": 7.7,
+  "elapsed_sec": 8.3,
   "models": {
     "generator": "gpt-4.1-mini",
     "judge": "gpt-4.1-mini",
@@ -3082,7 +3082,7 @@
       "first_section": "SUMMARY",
       "last_section": "REFERENCE"
     },
-    "generated_at": "2026-09-30T05:08:48"
+    "generated_at": "2026-09-30T05:22:41"
   },
   "rag_traces": [
     {

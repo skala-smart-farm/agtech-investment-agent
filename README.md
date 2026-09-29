@@ -72,7 +72,7 @@ uv run python app.py
 - pip 사용 시: `pip install -r requirements.txt` → `python -m playwright install chromium` → `python app.py`
 - `python app.py` 는 `replay/` 캐시로 제출본을 다시 만든다(API 키 불필요, 추가 비용 0). `--offline` 은 캐시에 없는 호출이 생기면 바로 실패시키는 재현 테스트다
 - 새로 평가하려면 `.env.example` 을 `.env` 로 복사해 키를 넣고 `python app.py --fresh` (LLM 약 $0.6/회)
-- 평가 스크립트(`eval/`)는 임베딩 모델 여러 개(수 GB)나 OpenAI 키가 필요하다
+- 평가 재현(키 불필요): `python -m eval.eval_judge --n 20` · `eval.eval_eligibility` (`holdout`) · `eval.eval_positive_control`. 임베딩 6종 비교(`eval.eval_retrieval`)만 모델(수 GB)을 내려받는다
 
 
 ## Evaluation
