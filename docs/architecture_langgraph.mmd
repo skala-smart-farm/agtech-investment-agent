@@ -1,0 +1,33 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	discover(discover)
+	verify(verify)
+	select(select)
+	tech(tech)
+	market(market)
+	competition(competition)
+	decide(decide)
+	report(report)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> discover;
+	competition --> decide;
+	decide -.-> discover;
+	decide -.-> report;
+	decide -.-> select;
+	discover --> verify;
+	market --> competition;
+	select --> market;
+	select --> tech;
+	tech --> competition;
+	verify -.-> discover;
+	verify -.-> report;
+	verify -.-> select;
+	report --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

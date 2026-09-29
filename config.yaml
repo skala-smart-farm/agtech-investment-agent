@@ -1,0 +1,83 @@
+# 실행 설정. 모델 이름·검색 파라미터·평가 기준 수치는 코드에 박지 않고 여기서만 바꾼다.
+
+domain:
+  name: AgTech
+  description: "AI·센서·로봇으로 작물 재배, 병해충 진단, 수확, 축산 등 농업 생산성을 높이는 기술"
+  region_priority: [KR, GLOBAL]        # 국내 스타트업을 먼저 평가하고, 부족하면 해외로 넓힌다
+  # 세부 분야: 발굴 쿼리와 시장 분석 단위로 쓴다 (ko: 한국어 검색어, en: 영문 검색어)
+  segments:
+    - {id: greenhouse, name: "스마트팜·시설원예 AI 환경제어", ko: "스마트팜 AI", en: "AI greenhouse controlled environment agriculture"}
+    - {id: diagnosis, name: "작물 생육·병해충 진단 AI", ko: "작물 병해충 진단 AI", en: "AI crop disease detection"}
+    - {id: robotics, name: "농업 로봇·자율주행 농기계", ko: "농업 로봇", en: "agricultural robotics autonomous tractor"}
+    - {id: livestock, name: "축산 AI(가축 건강·사양 관리)", ko: "축산 AI", en: "livestock AI health monitoring"}
+    - {id: agdata, name: "농업 데이터·유통 플랫폼 AI", ko: "농업 데이터 플랫폼", en: "agriculture data platform AI"}
+
+models:
+  generator: gpt-4.1-mini              # 분석·보고서 작성
+  judge: gpt-4.1-mini                  # 문서 관련성 판정, 평가 기준 O/X 판정, RAG 답변 평가
+  temperature: 0
+
+embedding:
+  model: dragonkue/snowflake-arctic-embed-l-v2.0-ko   # eval/eval_retrieval.py 비교 결과로 선정 (README 참고)
+  query_prefix: "query: "              # 모델 카드 규칙: 질의에만 접두어, 문서는 없음
+  passage_prefix: ""
+  batch_size: 16
+  normalize: true
+
+rag:
+  corpus_dir: data/corpus
+  manifest: data/manifest.yaml
+  max_total_pages: 200                 # 과제 조건: 문서 전체 200페이지 이내
+  chunk_size: 800
+  chunk_overlap: 100
+  top_k: 4                             # 최종 컨텍스트 조각 수 (3~5 범위)
+  candidate_k: 8                       # 앙상블 전에 각 검색기가 가져오는 수
+  ensemble_weights: [0.3, 0.7]         # [Kiwi BM25, FAISS dense] — 0.5:0.5 보다 두 질문 세트 모두에서 Hit@5 가 높음
+  min_relevant: 2                      # 관련 조각이 이보다 적으면 질의 재작성
+  max_rewrites: 2                      # Agentic RAG 재작성 루프 상한
+  web_fallback: true                   # 재작성 후에도 부족하면 웹 검색으로 보완
+
+search:
+  max_results: 5
+  news_time_range: year                # 오래된 정보 방지: 뉴스는 최근 1년 우선
+  fallback_time_range: null            # 결과가 부족할 때만 기간 제한 해제
+  exclude_domains:                     # 출처 신뢰도가 낮은 개인 블로그·커뮤니티·주식 카페는 근거에서 제외
+    [blog.naver.com, m.blog.naver.com, cafe.naver.com, tistory.com, brunch.co.kr, velog.io, medium.com,
+     youtube.com, facebook.com, instagram.com, linkedin.com, namu.wiki, reddit.com, x.com, twitter.com,
+     # 유료 시장조사 보고서 홍보 페이지: 출처마다 수치 편차가 크고 원문 확인이 안 됨 → 시장 수치는 공공 문서를 우선
+     imarcgroup.com, mordorintelligence.com, mordorintelligence.kr, gminsights.com, precedenceresearch.com,
+     marketsandmarkets.com, fortunebusinessinsights.com, grandviewresearch.com, researchandmarkets.com,
+     alliedmarketresearch.com, expertmarketresearch.com, globenewswire.com, openpr.com, einpresswire.com,
+     sphericalinsights.com, custommarketinsights.com, marketresearchfuture.com, businessresearchinsights.com,
+     rootsanalysis.com, maximizemarketresearch.com, verifiedmarketresearch.com, databridgemarketresearch.com,
+     coherentmarketinsights.com, marketresearch.com, futuremarketinsights.com, transparencymarketresearch.com,
+     skyquestt.com, polarismarketresearch.com, zionmarketresearch.com, emergenresearch.com, stellarmr.com]
+
+workflow:
+  max_candidates_per_round: 16         # 한 번의 발굴 라운드에서 검증할 최대 후보 수
+  max_discovery_rounds: 2              # 후보가 바닥나면 발굴을 다시 도는 횟수 상한
+  max_evaluations: 4                   # 심층 평가(기술·시장·경쟁·판단)를 반복할 최대 스타트업 수
+
+decision:
+  invest_threshold: 70                 # 100점 만점, 이상이면 "투자"
+  min_dimension_ratio:                 # 핵심 항목 최소 통과율 (미달 시 총점과 무관하게 "보류")
+    founder: 0.5
+    market: 0.5
+  max_unknown_ratio: 0.4               # 근거를 못 찾은(UNKNOWN) 문항이 40% 를 넘으면 "정보 부족 보류"
+
+report:
+  max_pages: 5
+  summary_max_chars: 560               # SUMMARY 글자 수 상한 (A4 절반 이내는 렌더링 후 높이로 따로 검증)
+  output_dir: outputs
+
+cache:
+  dir: replay                          # 제출본 재현용 캐시 (검색 결과·발굴 스냅샷·LLM 응답을 저장소에 포함)
+                                       # --fresh 로 실행하면 cache_fresh/ 에 새로 수집한다
+  llm: true                            # 같은 입력의 LLM 호출은 SQLite 캐시 재사용
+  search: true                         # 같은 쿼리의 웹 검색 결과 재사용
+  embeddings: true                     # 문서 임베딩 캐시 (재색인 비용 방지)
+
+submission:                            # 제출 파일명: RAG-Output_{campus}-{class}_{이름 가나다순}.pdf
+  campus: "캠퍼스"                      # TODO: 실제 캠퍼스명으로 바꾸기
+  class: "X반"                          # TODO: 실제 반으로 바꾸기
+  members: [김가연, 김진녕, 문지후, 이준희, 정승우]

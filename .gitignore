@@ -1,0 +1,13 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+cache/
+cache_fresh/
+# 재현용 캐시 중 문서 임베딩 캐시만 제외 (FAISS 색인·조각·질의 임베딩은 커밋 → 모델 없이도 같은 검색 결과)
+replay/emb/
+data/candidates/
+outputs/runs/
+*.log

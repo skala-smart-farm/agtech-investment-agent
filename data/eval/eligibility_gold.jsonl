@@ -1,0 +1,20 @@
+{"name": "엔씽", "name_en": "N.THING", "region": "KR", "segment_id": "greenhouse", "gold": true, "basis": "비상장, 시리즈C까지 유치(회사 발표), 2026-03 삼성벤처투자 전략투자"}
+{"name": "메타파머스", "name_en": "Metafarmers", "region": "KR", "segment_id": "robotics", "gold": true, "basis": "비상장, 프리A 30억 (2025-08)"}
+{"name": "아이오크롭스", "name_en": "IOCROPS", "region": "KR", "segment_id": "greenhouse", "gold": true, "basis": "비상장, 시리즈A 70억 (2022-12)"}
+{"name": "아그모", "name_en": "AGMO", "region": "KR", "segment_id": "robotics", "gold": true, "basis": "비상장, 시리즈A 진행 (2026-07)"}
+{"name": "인트플로우", "name_en": "Intflow", "region": "KR", "segment_id": "livestock", "gold": true, "basis": "비상장, 프리A 약 10억 (2025-12)"}
+{"name": "한국축산데이터", "name_en": "AIDKR", "region": "KR", "segment_id": "livestock", "gold": true, "basis": "비상장, 시리즈B 200억 (2021-11) 이후 유상증자"}
+{"name": "트릿지", "name_en": "Tridge", "region": "KR", "segment_id": "agdata", "gold": false, "basis": "시리즈D 500억 (2022-08) — Series C 초과"}
+{"name": "유라이크코리아", "name_en": "uLikeKorea", "region": "KR", "segment_id": "livestock", "gold": false, "basis": "메텍홀딩스가 지분 51% 인수 (2025-03) — M&A Exit"}
+{"name": "팜에이트", "name_en": "Farm8", "region": "KR", "segment_id": "greenhouse", "gold": false, "basis": "프리IPO 완료 (2020-07), 사모펀드 최대주주 — 성숙 기업"}
+{"name": "Source.ag", "name_en": "Source.ag", "region": "GLOBAL", "segment_id": "greenhouse", "gold": true, "basis": "Series B €15.2M (2025-11)"}
+{"name": "Agtonomy", "name_en": "Agtonomy", "region": "GLOBAL", "segment_id": "robotics", "gold": true, "basis": "Series B $18M (2025-10)"}
+{"name": "Orchard Robotics", "name_en": "Orchard Robotics", "region": "GLOBAL", "segment_id": "diagnosis", "gold": true, "basis": "Series A $22M (2025-09)"}
+{"name": "Fermata", "name_en": "Fermata", "region": "GLOBAL", "segment_id": "diagnosis", "gold": true, "basis": "Series A $10M (2025-01)"}
+{"name": "Four Growers", "name_en": "Four Growers", "region": "GLOBAL", "segment_id": "robotics", "gold": true, "basis": "Series A $9M (2024-11)"}
+{"name": "Carbon Robotics", "name_en": "Carbon Robotics", "region": "GLOBAL", "segment_id": "robotics", "gold": false, "basis": "Series D $70M (2024-10) — Series C 초과"}
+{"name": "Halter", "name_en": "Halter", "region": "GLOBAL", "segment_id": "livestock", "gold": false, "basis": "Series E $220M (2026-03) — Series C 초과"}
+{"name": "Taranis", "name_en": "Taranis", "region": "GLOBAL", "segment_id": "diagnosis", "gold": false, "basis": "Series D $40M (2022-09) — Series C 초과"}
+{"name": "Tortuga AgTech", "name_en": "Tortuga AgTech", "region": "GLOBAL", "segment_id": "robotics", "gold": false, "basis": "Oishii 가 핵심 자산 인수 (2025-03) — Exit"}
+{"name": "FarmWise", "name_en": "FarmWise", "region": "GLOBAL", "segment_id": "robotics", "gold": false, "basis": "Taylor Farms 가 사업 인수 (2025-04) — Exit"}
+{"name": "Iron Ox", "name_en": "Iron Ox", "region": "GLOBAL", "segment_id": "greenhouse", "gold": false, "basis": "폐업 (2023) — 중대한 부정 신호"}

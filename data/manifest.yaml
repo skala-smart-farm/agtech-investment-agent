@@ -1,0 +1,55 @@
+# RAG 문서 코퍼스 (전체 196쪽, 과제 한도 200쪽)
+# 선정 원칙
+#  1) 공공기관·국제기구·연구기관·학술지의 공개 문서만 (유료 시장조사 홍보 페이지 제외)
+#  2) 2023년 이후 발행 (투자 판단의 최신성)
+#  3) 최종본만, 발췌 없이 문서 전체 사용 (200쪽 계산이 분명하도록)
+#  4) 에이전트 질문에 대응: 시장 규모·성장(market), 투자 동향(market·discovery), 정책·규제(market),
+#     기술 동향 기준선(tech), 국내 스타트업 발굴 시드(discovery), 도입 장벽·리스크(market)
+#  5) 평가 후보가 몰린 세부 분야(로봇, 시설원예·수직농장, 축산)에 기술·사업성 문서를 둔다
+#  6) 이해상충 문서는 뺀다 (예: 평가 후보 기업 소속 연구소장이 쓴 보고서)
+# type: report(기관 보고서 형식) | paper(학술 논문 형식) — REFERENCE 표기 형식을 결정한다
+documents:
+  - {doc_id: mafra_plan2025, file: kr_mafra_2025_smartagri_basic_plan.pdf, type: report, lang: ko, pages_total: 43,
+     publisher: 농림축산식품부, year: 2025, title: "제1차 스마트농업 육성 기본계획(2025~2029년)",
+     url: "https://www.mafra.go.kr/bbs/home/792/573035/artclView.do", role: "정책 목표·지원 제도·시장 수치·진입 장벽"}
+  - {doc_id: krei_market2024, file: kr_krei_2024_smartagri_market_employment.pdf, type: report, lang: ko, pages_total: 16,
+     publisher: 한국농촌경제연구원, year: 2024, title: "스마트 농업과 농업 부문 고용 현황 및 전망",
+     url: "https://www.krei.re.kr/wldagr/page/236?cmd=view&biblioId=542406&pageIndex=1", role: "기관별 스마트농업 시장 추정치 비교"}
+  - {doc_id: kdi_agtech2023, file: kr_kdi_2023_agtech_policy_review.pdf, type: report, lang: ko, pages_total: 18,
+     publisher: KDI 경제교육·정보센터, year: 2023, title: "애그테크, 선택 아닌 필수 - 주요국의 애그테크 산업 정책 동향을 중심으로",
+     url: "https://eiec.kdi.re.kr/publish/reviewView.do?ridx=15&idx=151&fcode=000020003600003", role: "세계·국내 애그테크 시장, 주요국 정책"}
+  - {doc_id: mafra_top15_2026, file: kr_mafra_2026_smartagri_top15_firms_press.pdf, type: report, lang: ko, pages_total: 2,
+     publisher: 농림축산식품부, year: 2026, title: "기술력과 현장 확산 성과를 갖춘 스마트농업 우수기업 15개사 최초 선정",
+     url: "https://www.mafra.go.kr/bbs/home/792/577570/artclView.do", role: "스타트업 발굴 시드(정부 선정 기업)"}
+  - {doc_id: mafra_aventures2024, file: kr_mafra_2024_aventures60_press.pdf, type: report, lang: ko, pages_total: 2,
+     publisher: 농림축산식품부, year: 2024, title: "농식품 분야 우수 벤처창업 기업 정보가 한 곳에",
+     url: "https://www.mafra.go.kr/bbs/home/792/570672/artclView.do", role: "스타트업 발굴 시드(이달의 A-벤처스)"}
+  - {doc_id: mafra_fund2026, file: kr_mafra_2026_agrifood_fund_press.pdf, type: report, lang: ko, pages_total: 2,
+     publisher: 농림축산식품부, year: 2026, title: "농식품 모태펀드, 2026년 신산업 투자 본격 확대",
+     url: "https://www.mafra.go.kr/bbs/home/792/576534/artclView.do", role: "국내 농식품 벤처 투자 자금 흐름"}
+  - {doc_id: nars_act2023, file: kr_nars_2023_smartagri_act.pdf, type: report, lang: ko, pages_total: 4,
+     publisher: 국회입법조사처, year: 2023, title: "「스마트농업 육성 및 지원에 관한 법률」 제정의 의의와 향후 과제",
+     url: "https://www.nars.go.kr/report/view.do?cmsCode=CM0043&brdSeq=42952", role: "규제 프레임(스마트농업법)"}
+  - {doc_id: mafra_dataax2026, file: kr_mafra_2026_smartagri_data_ax_press.pdf, type: report, lang: ko, pages_total: 3,
+     publisher: 농림축산식품부, year: 2026, title: "'스마트농업 데이터 AX활용' 본격 추진",
+     url: "https://www.mafra.go.kr/bbs/home/792/577708/artclView.do", role: "2026 농업 AI 정책·데이터 인프라"}
+  - {doc_id: agfunder2026, file: en_agfunder_2026_global-investment-report.pdf, type: report, lang: en, pages_total: 65,
+     publisher: AgFunder, year: 2026, title: "Global AgriFoodTech Investment Report 2026",
+     url: "https://agfunder.com/research/agfunder-global-agrifoodtech-investment-report-2026/", role: "분야별 글로벌 투자 동향(국가별·단계별)",
+     note: "저장소 용량 때문에 이미지 해상도만 낮춘 사본 (텍스트는 원본과 동일)"}
+  - {doc_id: usda_precision2023, file: en_usda-ers_2023_precision-ag-digital-era_summary.pdf, type: report, lang: en, pages_total: 2,
+     publisher: USDA Economic Research Service, year: 2023, title: "Precision Agriculture in the Digital Era: Recent Adoption on U.S. Farms (Report Summary)",
+     url: "https://www.ers.usda.gov/publications/pub-details?pubid=105893", role: "정밀농업 도입률·도입 장벽"}
+  - {doc_id: usda_dairy2026, file: en_usda-ers_2026_precision-dairy-robotic-milking_summary.pdf, type: report, lang: en, pages_total: 2,
+     publisher: USDA Economic Research Service, year: 2026, title: "Precision Dairy Farming, Robotic Milking, and Profitability in the United States (Report Summary)",
+     url: "https://www.ers.usda.gov/publications/113704", role: "축산 로봇·정밀 낙농 수익성"}
+  - {doc_id: mdpi_robotics2025, file: en_mdpi_2025_agri-robotics-review.pdf, type: paper, lang: en, pages_total: 26,
+     authors: "Spagnuolo, M., Todde, G., Caria, M., Furnitto, N., Schillaci, G., & Failla, S.", year: 2025,
+     title: "Agricultural Robotics: A Technical Review Addressing Challenges in Sustainable Crop Production",
+     journal: Robotics, volume: 14, issue: 2, pages: "9", publisher: MDPI,
+     url: "https://doi.org/10.3390/robotics14020009", role: "농업 로봇 기술 성숙도·확산 장벽 (로봇 후보 기준선)"}
+  - {doc_id: frontiers_vf2026, file: en_frontiers_2026_vertical-farming-economics.pdf, type: paper, lang: en, pages_total: 11,
+     authors: "Meeuws, G. J. J. M., Heeling, D. J., van Stuijvenberg, A., Mogollón, J. M., Erisman, J. W., & Behrens, P. A.", year: 2026,
+     title: "Vertical farming economics: crop performance targets for cost-competitive vertical farming",
+     journal: Frontiers in Sustainable Food Systems, volume: 10, pages: "1833809", publisher: Frontiers,
+     url: "https://doi.org/10.3389/fsufs.2026.1833809", role: "수직농장·시설원예 사업성 리스크 (CEA 후보 기준선)"}

@@ -1,0 +1,132 @@
+{
+  "summary": {
+    "n": 10,
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "false_positive": 0,
+    "false_negative": 0
+  },
+  "rows": [
+    {
+      "name": "Tevel Aerobotics",
+      "region": "GLOBAL",
+      "gold": true,
+      "pred": true,
+      "ok": true,
+      "pred_stage": "Series C",
+      "raw_stage": "Series C",
+      "stage_quote": "Israel-based agritech company Tevel secured US$18m in Series C funding",
+      "reason": "통과",
+      "basis": "Series C US$18M (2026-03)"
+    },
+    {
+      "name": "SwarmFarm Robotics",
+      "region": "GLOBAL",
+      "gold": true,
+      "pred": true,
+      "ok": true,
+      "pred_stage": "Series B",
+      "raw_stage": "Series B",
+      "stage_quote": "SwarmFarm Robotics has raised $30 million in Series B funding",
+      "reason": "통과",
+      "basis": "Series B A$30M (2025-10)"
+    },
+    {
+      "name": "4AG Robotics",
+      "region": "GLOBAL",
+      "gold": true,
+      "pred": true,
+      "ok": true,
+      "pred_stage": "Series B",
+      "raw_stage": "Series B",
+      "stage_quote": "4AG Robotics has raised $42.0M across 2 funding rounds. Most recently, it raised $29.0M Series B in July 2025.",
+      "reason": "통과",
+      "basis": "Series B C$40M (2025-07)"
+    },
+    {
+      "name": "Burro",
+      "region": "GLOBAL",
+      "gold": true,
+      "pred": true,
+      "ok": true,
+      "pred_stage": "Series B",
+      "raw_stage": "Series B",
+      "stage_quote": "Burro - 2026 Company Profile, Team, Funding & Competitors Burro has raised a total funding of $44.5M over 4 rounds. Its latest funding round was a Series B round on Dec 12, 2023",
+      "reason": "통과",
+      "basis": "Series B $24M (2024-01)"
+    },
+    {
+      "name": "Aigen",
+      "region": "GLOBAL",
+      "gold": true,
+      "pred": true,
+      "ok": true,
+      "pred_stage": "Series A",
+      "raw_stage": "Series A",
+      "stage_quote": "Aigen, a Kirkland, Washington, DC-based AI-driven robotics company, has closed a $12 million Series A funding, bringing its total raised to $19 million.",
+      "reason": "통과",
+      "basis": "Series A $12M (2023-11)"
+    },
+    {
+      "name": "Monarch Tractor",
+      "region": "GLOBAL",
+      "gold": false,
+      "pred": false,
+      "ok": true,
+      "pred_stage": "Series C",
+      "raw_stage": "Series C",
+      "stage_quote": "Monarch raised capital across multiple rounds, beginning with a $20 million Series A in 2021. The funding trajectory culminated in a $133 million Series C in July 2024, co-led by Astanor Ventures and HH-CTBC Partnership L.P., an affiliate of Foxconn.",
+      "reason": "G1/G3 상장 또는 Exit 완료 근거 있음; G5 상장사·대기업 계열 (독립 스타트업 아님); G4 중대한 부정 신호: Mass layoffs and headquarters closure reported in 2026.",
+      "basis": "사업 붕괴 후 Caterpillar 가 자산 인수 (2026-04)"
+    },
+    {
+      "name": "Small Robot Company",
+      "region": "GLOBAL",
+      "gold": false,
+      "pred": false,
+      "ok": true,
+      "pred_stage": "Unknown",
+      "raw_stage": "Unknown",
+      "stage_quote": "",
+      "reason": "G2 투자 단계 'Unknown' (Seed~Series C 아님 또는 확인 불가); G4 중대한 부정 신호: Agtech startup Small Robot Company shutting down",
+      "basis": "관리인 선임·청산 (2024-02)"
+    },
+    {
+      "name": "Ecorobotix",
+      "region": "GLOBAL",
+      "gold": false,
+      "pred": false,
+      "ok": true,
+      "pred_stage": "Series D 이상",
+      "raw_stage": "Series D 이상",
+      "stage_quote": "Ecorobotix, a Switzerland-based smart pesticide spraying system, raised $150m in a $45m Series C in 2024 and a $105m Series D in 2025.",
+      "reason": "G2 투자 단계 'Series D 이상' (Seed~Series C 아님 또는 확인 불가)",
+      "basis": "Series D $105M (2025) — Series C 초과"
+    },
+    {
+      "name": "Ecoation",
+      "region": "GLOBAL",
+      "gold": false,
+      "pred": false,
+      "ok": true,
+      "pred_stage": "Unknown",
+      "raw_stage": "Series A",
+      "stage_quote": "Ecoation's Disease Detection Tool Raises $1m, Tech Raises £10m for Animal Therapeutics Platform. Raises $4.25m Series",
+      "reason": "G2 투자 단계 'Unknown' (Seed~Series C 아님 또는 확인 불가)",
+      "basis": "Biobest 가 사업·자산 인수 (2025-07) — Exit"
+    },
+    {
+      "name": "Plantix",
+      "region": "GLOBAL",
+      "gold": false,
+      "pred": false,
+      "ok": true,
+      "pred_stage": "Unknown",
+      "raw_stage": "Unknown",
+      "stage_quote": "",
+      "reason": "G2 투자 단계 'Unknown' (Seed~Series C 아님 또는 확인 불가); G6 근거 출처 0곳(제3자 0곳) — 3곳 이상·제3자 1곳 이상 필요",
+      "basis": "HELM AG 과반 지분 인수 (2023-04) — Exit"
+    }
+  ]
+}
