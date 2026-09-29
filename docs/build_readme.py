@@ -28,14 +28,15 @@ def _j(rel: str) -> dict:
 
 
 def _runtime(cfg) -> tuple[str, str, str]:
-    """실제 파이프라인 설정으로 잰 검색기 수치 (eval/eval_final_retriever.py → outputs/eval/runtime_retriever.json)."""
-    d = _j("outputs/eval/runtime_retriever.json")
-    w = cfg.rag.ensemble_weights
-    label = "Dense 단독" if w[0] == 0 else f"하이브리드 BM25 {w[0]} : Dense {w[1]}"
-    row = next((r for r in d.get("rows", []) if r.get("configured")), None)
+    """지금 설정(임베딩·가중치)과 같은 행을 실제 파이프라인 설정 측정표(outputs/eval/runtime_retriever.json)에서 찾는다."""
+    w = [float(x) for x in cfg.rag.ensemble_weights]
+    label = "Dense 단독" if w[0] == 0 else f"하이브리드 BM25 {w[0]:g} : Dense {w[1]:g}"
+    rows = _j("outputs/eval/runtime_retriever.json").get("rows", [])
+    row = next((r for r in rows if r.get("embedding") == cfg.embedding.model
+                and [float(x) for x in r.get("weights[bm25,dense]", [])] == w), None)
     if not row:
         return label, "-", "-"
-    return label, f"{row['Hit@4']:.3f}", f"{row['MRR@4']:.3f}"
+    return label, f"{row['all']['Hit@4']:.3f}", f"{row['all']['MRR@4']:.3f}"
 
 
 def _elig_stale() -> bool:

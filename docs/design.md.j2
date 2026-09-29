@@ -147,7 +147,7 @@
 **검색**: Kiwi 형태소 BM25 {{ cfg.rag.ensemble_weights[0] }} + Dense {{ cfg.rag.ensemble_weights[1] }} (RRF) → 후보 {{ cfg.rag.candidate_k }}개 → Judge LLM 관련성 O/X → 최종 {{ cfg.rag.top_k }}개 (가중치·방식은 2.4 실측으로 결정)
 
 ### 2.4 임베딩 모델 선정 (후보·기준·실측)
-**리더보드 순위로 고르지 않았다.** 공개 벤치마크 상위 모델 간 차이가 작고 문서 종류에 따라 순위가 바뀌므로, 우리 문서로 직접 재서 골랐다. 과제 조건대로 **경제성**을 먼저 봤다: 모든 후보가 로컬에서 도는 오픈소스라 임베딩 API 비용은 0원이다.
+**리더보드 순위로 고르지 않았다.** 공개 한국어 검색 벤치마크에서 상위 모델 간 차이는 nDCG@10 1.5%p 이내라(KURE 공개 벤치마크) 문서 종류에 따라 순위가 바뀔 수 있다. 그래서 우리 문서로 직접 재서 골랐다. 과제 조건대로 **경제성**을 먼저 봤다: 모든 후보가 로컬에서 도는 오픈소스라 임베딩 API 비용은 0원이다.
 
 **후보를 고른 기준 (과제 조건에서 출발)**
 
@@ -162,20 +162,17 @@
 **최종 비교 후보 6개**: bge-m3(다국어 기준선) · KURE-v1(bge-m3 한국어 미세조정) · snowflake-arctic-embed-l-v2.0-ko(행정·금융 문서 기계독해로 한국어 미세조정) · multilingual-e5-large(평균 풀링 계열 대조군) · Qwen3-Embedding-0.6B(디코더 기반 대안) · multilingual-e5-small(저사양 노트북 대안)
 제외: ko-sroberta·MiniLM(128토큰 한계, 검색용 아님), upskyy/bge-m3-korean(라이선스 미기재), BGE-m3-ko(KURE 와 같은 가설·학습 데이터 미기재)
 
-**실측 (질문 70개 = 자연어형 40 + 키워드형 30, 정답 = 같은 문서·페이지)**
+**1차 실측 (임베딩 6종 × 검색 방식, 질문 70개 = 자연어형 40 + 키워드형 30, 정답 = 같은 문서·페이지, 두 세트 평균)**
 
 {{ retrieval_table }}
 
+**2차: 실제 파이프라인 설정으로 다시 측정해 결정**
+
 {{ retrieval_decision }}
 
-**동률 판정 (파이프라인 기준: Judge LLM 이 보는 후보 8개 안 적중률 Hit@8, 질문 70개)**
+{{ runtime_table }}
 
-{{ tiebreak_table }}
-
-- 두 설정 모두 Hit@8 이 같다. 그래서 **한국어 문서 순위(MRR)** 로 갈랐다: 질문의 62%(43/70), 문서의 8/13 이 한국어이고, 회사명·정책명 같은 정확한 용어를 잡는 키워드 검색이 필요하다(하이브리드).
-- 대가: 영어 문서에서는 1등 정확도가 떨어진다. 이 순위는 Judge LLM 이 후보 8개를 다시 판정해 보완한다. KURE-v1 Dense 는 영어 문서가 많아질 때의 대안으로 기록한다.
-
-**선정**: `{{ cfg.embedding.model }}` + Hybrid(Kiwi BM25 {{ cfg.rag.ensemble_weights[0] }} : Dense {{ cfg.rag.ensemble_weights[1] }}). Apache-2.0, 최대 8,192토큰(학습 1,300토큰 > 우리 조각), 질의 접두어 `query: ` 규칙을 설정 파일에 명시.
+**선정**: `{{ cfg.embedding.model }}` + 하이브리드(Kiwi BM25 {{ cfg.rag.ensemble_weights[0] }} : Dense {{ cfg.rag.ensemble_weights[1] }}), 후보 {{ cfg.rag.candidate_k }}개 → Judge O/X → 앞 {{ cfg.rag.top_k }}개. MIT 라이선스, 최대 8,192토큰(우리 조각 800자보다 충분히 김), 질의 접두어 없음(설정 파일에 명시).
 
 ---
 

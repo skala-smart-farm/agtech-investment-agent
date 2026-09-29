@@ -102,21 +102,6 @@ def _retrieval_table() -> str:
     return piv.to_markdown(index=False)
 
 
-def _tiebreak_table() -> str:
-    f = path("outputs/eval/final_retriever.json")
-    if not f.exists():
-        return ""
-    d = json.loads(f.read_text(encoding="utf-8"))
-    names = {"final (hybrid)": "snowflake-arctic-ko + Hybrid 0.3:0.7 (선택)", "dense only": "snowflake-arctic-ko Dense",
-             "KURE-v1 hybrid": "KURE-v1 + Hybrid 0.3:0.7", "KURE-v1 dense": "KURE-v1 Dense", "Kiwi BM25 only": "Kiwi BM25 단독"}
-    rows = ["| 설정 | 전체 Hit@8 / MRR@5 | 한국어 문서 Hit@8 / MRR@5 | 영어 문서 Hit@8 / MRR@5 |", "|---|---|---|---|"]
-    for k, label in names.items():
-        if k in d:
-            r = d[k]
-            rows.append(f"| {label} | " + " | ".join(f"{r[l]['Hit@8']:.3f} / {r[l]['MRR@5']:.3f}" for l in ("all", "ko", "en")) + " |")
-    return "\n".join(rows)
-
-
 def _elig_stale() -> bool:
     """적격성 평가 결과가 현재 적격성 코드보다 오래됐으면 True (설계서에 '재측정 안 됨'을 자동으로 밝히기 위해)."""
     res = path("outputs/eval/eligibility_eval_gold.json")
@@ -125,16 +110,26 @@ def _elig_stale() -> bool:
 
 
 def _runtime_table() -> str:
-    """실제 파이프라인 설정(후보 k, 앞 4개 사용)으로 잰 검색기 비교 (eval/eval_final_retriever.py 결과)."""
+    """실제 파이프라인 설정(후보 8개, 앞 4개 사용)으로 잰 검색기 비교 (eval/eval_final_retriever.py 결과)."""
     d = _json("outputs/eval/runtime_retriever.json")
-    rows = d.get("rows") or []
+    rows = {r["name"]: r for r in d.get("rows") or []}
     if not rows:
         return "(eval/eval_final_retriever.py 실행 결과 없음)"
-    cols = [c for c in ("Hit@1", "Hit@3", "Hit@4", "Hit@5", "Hit@8", "MRR@4") if c in rows[0]]
-    out = ["| 설정 | " + " | ".join(cols) + " |", "|---|" + "---|" * len(cols)]
-    for r in rows:
-        out.append(f"| {r.get('name')} | " + " | ".join(f"{r[c]:.3f}" for c in cols) + " |")
-    return "\n".join(out)
+    pick = d.get("recommendation", {}).get("name")
+    show = ["final (hybrid)", "dense only", "hybrid 0.5:0.5", "KURE-v1 dense", "KURE-v1 hybrid", pick, "KURE-v1 hybrid 0.5:0.5",
+            "Kiwi BM25 only"]
+    label = {"final (hybrid)": "snowflake + 하이브리드 0.3:0.7 (처음 선택)", "dense only": "snowflake Dense",
+             "hybrid 0.5:0.5": "snowflake + 하이브리드 0.5:0.5", "KURE-v1 dense": "KURE-v1 Dense",
+             "KURE-v1 hybrid": "KURE-v1 + 하이브리드 0.3:0.7", "Kiwi BM25 only": "Kiwi BM25 단독"}
+    out = ["| 설정 (후보 8개) | Hit@1 | Hit@3 | **Hit@4** | **MRR@4** | Hit@8 | 한국어 문서 Hit@4 | 영어 문서 Hit@4 |",
+           "|---|---|---|---|---|---|---|---|"]
+    for name in dict.fromkeys(n for n in show if n in rows):
+        a, ko, en = rows[name]["all"], rows[name]["ko"], rows[name]["en"]
+        lab = label.get(name, name.replace("KURE-v1 hybrid", "KURE-v1 + 하이브리드"))
+        lab = f"**{lab} (선택)**" if name == pick else lab
+        out.append(f"| {lab} | {a['Hit@1']:.3f} | {a['Hit@3']:.3f} | {a['Hit@4']:.3f} | {a['MRR@4']:.3f} | {a['Hit@8']:.3f} | "
+                   f"{ko['Hit@4']:.3f} | {en['Hit@4']:.3f} |")
+    return "\n".join(out) + "\n\n표의 수치는 질문 70개 기준이며 1문항 = 0.014. 한국어/영어는 정답 문서의 언어다(질문은 모두 한국어)."
 
 
 def _json(rel: str) -> dict:
@@ -163,7 +158,6 @@ def build() -> tuple[str, str]:
         state_fields=_state_fields(), retrieval_table=_retrieval_table(),
         retrieval_decision=_read("outputs/eval/retrieval_decision.md").replace("## ", "#### "),
         eligibility_history=_read("outputs/eval/eligibility_eval_history.md"),
-        tiebreak_table=_tiebreak_table(),
         judge_line=(lambda j: f"Relevance {j['relevance']:.2f} · Faithfulness {j['faithfulness']:.2f} · "
                               f"Correctness {j['correctness']:.2f} · 질의 재작성 {j['rewrite_rate']:.0%} · "
                               f"웹 보완 {j['web_fallback_rate']:.0%}" if j else "(미실행)")(

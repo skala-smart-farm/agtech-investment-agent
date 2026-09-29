@@ -18,8 +18,8 @@ models:
   temperature: 0
 
 embedding:
-  model: dragonkue/snowflake-arctic-embed-l-v2.0-ko   # eval/eval_retrieval.py 비교 결과로 선정 (README 참고)
-  query_prefix: "query: "              # 모델 카드 규칙: 질의에만 접두어, 문서는 없음
+  model: nlpai-lab/KURE-v1             # 실제 파이프라인 설정(Hit@4·MRR@4)으로 잰 결과로 선정 (outputs/eval/retrieval_decision.md)
+  query_prefix: ""                     # bge-m3 계열: 질의·문서 모두 접두어 없음
   passage_prefix: ""
   batch_size: 16
   normalize: true
@@ -32,7 +32,7 @@ rag:
   chunk_overlap: 100
   top_k: 4                             # 최종 컨텍스트 조각 수 (3~5 범위)
   candidate_k: 8                       # 앙상블 전에 각 검색기가 가져오는 수
-  ensemble_weights: [0.3, 0.7]         # [Kiwi BM25, FAISS dense] — 0.5:0.5 보다 두 질문 세트 모두에서 Hit@5 가 높음
+  ensemble_weights: [0.4, 0.6]         # [Kiwi BM25, FAISS dense] — 미리 정한 규칙(Hit@4 → MRR@4)의 1위. 0.1~0.4 는 Hit@4 가 같음
   min_relevant: 3                      # 최종 4개 중 3개 이상 관련이어야 통과 (적으면 질의 재작성)
   max_rewrites: 2                      # Agentic RAG 재작성 루프 상한
   web_fallback: true                   # 재작성 후에도 부족하면 웹 검색으로 보완
