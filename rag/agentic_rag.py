@@ -1,9 +1,11 @@
 """Agentic RAG 서브그래프.
 
 retrieve(하이브리드 검색) → grade(Judge LLM 이 조각별 관련성 O/X) →
-  관련 조각이 충분하면 finish
+  관련 조각이 충분하면(min_relevant 이상) finish
   부족하면 rewrite(질의 재작성) 후 다시 retrieve  (최대 max_rewrites 회)
   그래도 부족하면 web(웹 검색으로 보완, Corrective RAG) → finish
+관련 조각은 검색기 순위(Kiwi BM25 + FAISS 의 RRF 순위) 그대로 두고 앞에서부터 top_k 개만 컨텍스트로 쓴다.
+top_k 때문에 버린 관련 조각 수는 trace 에 kept/dropped 로 남긴다 (순위가 실제로 무엇을 버렸는지 보이게).
 """
 from __future__ import annotations
 
@@ -58,7 +60,8 @@ def _grade(state: RAGState) -> dict:
     cfg = get_config()
     chunks = state["retrieved"]
     if not chunks:
-        return {"trace": state["trace"] + [{"query": state["query"], "retrieved": 0, "relevant": 0}]}
+        return {"trace": state["trace"] + [{"query": state["query"], "retrieved": 0, "relevant": 0,
+                                            "kept": 0, "dropped": 0}]}
     listing = "\n\n".join(
         f"[{i}] ({c['meta'].get('publisher')} {c['meta'].get('year')}, p.{c['meta'].get('page')})\n{c['text'][:900]}"
         for i, c in enumerate(chunks))
@@ -66,10 +69,14 @@ def _grade(state: RAGState) -> dict:
         render("rag_grade", question=state["question"], purpose=state["purpose"], chunks=listing))
     ok = {j.idx for j in res.judgments if j.relevant}
     seen = {c["meta"]["chunk_id"] for c in state["relevant"]}
-    new = [c for i, c in enumerate(chunks) if i in ok and c["meta"]["chunk_id"] not in seen]
-    relevant = (state["relevant"] + new)[: cfg.rag.top_k]
-    trace = state["trace"] + [{"query": state["query"], "retrieved": len(chunks), "relevant": len(new)}]
-    return {"relevant": relevant, "trace": trace}
+    # 관련 판정 조각을 검색기 순위 순서 그대로 (재정렬 없음)
+    new = [(i, c) for i, c in enumerate(chunks) if i in ok and c["meta"]["chunk_id"] not in seen]
+    room = max(0, cfg.rag.top_k - len(state["relevant"]))
+    kept = new[:room]  # top_k 를 넘는 관련 조각은 버린다
+    trace = state["trace"] + [{"query": state["query"], "retrieved": len(chunks), "relevant": len(new),
+                               "kept": len(kept), "dropped": len(new) - len(kept),
+                               "kept_ranks": [i + 1 for i, _ in kept], "top_k": cfg.rag.top_k}]
+    return {"relevant": state["relevant"] + [c for _, c in kept], "trace": trace}
 
 
 def _route(state: RAGState) -> Literal["finish", "rewrite", "web"]:
