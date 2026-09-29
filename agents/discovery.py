@@ -133,7 +133,8 @@ def discovery_node(state: dict) -> dict:
             if not key or not valid:
                 continue
             key = en_key.setdefault(alias, key) if alias else key
-            region = "KR" if c.region.strip().upper() == "KR" else "GLOBAL"
+            # 한글 이름만으로는 판단하지 않는다(해외 기업을 한글로 적은 기사도 있음). 지역 값의 한국 표기만 KR 로 맞춘다
+            region = "KR" if c.region.strip().upper() in ("KR", "KOREA", "SOUTH KOREA", "한국", "국내") else "GLOBAL"
             item = found.setdefault(key, {"name": c.name, "name_en": c.name_en, "region": region,
                                           "segment_id": get_segment(c.segment_id)["id"], "what": c.what,
                                           "evidence_ids": [], "channels": set()})

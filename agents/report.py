@@ -417,7 +417,7 @@ def _failed_by_company(failed: list[dict], companies: list[list[str]]) -> dict[s
     for q in dict.fromkeys(f.get("query", "") for f in failed):
         who = next((c for a, c in alias if norm(a) in norm(q)), "분야·경쟁사 검색")
         out[who] = out.get(who, 0) + 1
-    return out
+    return dict(sorted(out.items()))  # 병렬 실행 순서와 관계없이 같은 보고서가 나오게
 
 
 def _candidate_blocks(evals: list[dict], notes: list[CandidateNote], reg: SourceRegistry, short: dict,

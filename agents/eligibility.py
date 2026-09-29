@@ -90,7 +90,7 @@ def _search(query: str, reg: SourceRegistry, gate: str, tried: list, **kw) -> li
 
 def _age_months(round_date: str, base: str) -> int | None:
     """최근 라운드(YYYY-MM 또는 YYYY)가 기준일(YYYY-MM-DD)보다 몇 달 전인지. 연도만 있으면 그해 12월로 본다."""
-    m = re.match(r"((?:19|20)\d{2})(?:[-./](\d{1,2}))?", round_date or "")
+    m = re.match(r"((?:19|20)\d{2})(?:\s*[-./년]\s*(\d{1,2}))?", round_date or "")
     if not m:
         return None
     return (int(base[:4]) - int(m.group(1))) * 12 + int(base[5:7]) - int(m.group(2) or 12)
@@ -198,7 +198,7 @@ def _check_one(cand: dict, registry: dict) -> tuple[dict, dict]:
     # G6 최소 근거량: 회사명이 제목·스니펫·본문에 실제로 나오는 웹 근거만 센다. 구조화 스냅샷은 제외
     # (동명·무관 검색 결과나 국민연금 조회 결과가 출처 수를 채우지 않게)
     keys = [k for k in dict.fromkeys(norm(normalize(n)) for n in (name, en, res.official_name)) if len(k) >= 2]
-    named = [s for s in map(reg.get, ids) if s and s["kind"] == "web" and not s["key"].startswith(SNAPSHOT_KEYS)
+    named = [s for s in map(reg.get, ids) if s and s["kind"] in ("web", "doc") and not s["key"].startswith(SNAPSHOT_KEYS)
              and any(k in norm(reg.text(s["id"])) for k in keys)]
     hosts = {s["url"].split("/")[2].lower() for s in named if s["url"].count("/") >= 2}
     own = [k for k in (norm(en), norm(name)) if len(k) >= 3]

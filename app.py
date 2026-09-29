@@ -102,7 +102,7 @@ def main() -> None:
                         for e in state.get("evaluations", [])],
         "report": report, "rag_traces": state.get("rag_traces", []), "log": state.get("log", []),
         "sources_collected": len(state.get("registry", {})),
-        "failed_searches": list(getattr(web_search_mod, "FAILED_QUERIES", [])),
+        "failed_searches": sorted({(f["agent"], f["query"]) for f in getattr(web_search_mod, "FAILED_QUERIES", [])}),
         "llm_cost": TRACKER.summary(),
     }
     # 공개 저장소에 로컬 절대경로가 남지 않게 저장소 기준 상대경로로 적는다

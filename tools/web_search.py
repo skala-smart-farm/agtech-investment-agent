@@ -146,7 +146,7 @@ def web_search(query: str, registry: SourceRegistry, agent: str, *, topic: str =
     if len(got[0] or []) < min_results and tr:
         got.append(_raw_search(query, topic, cfg.search.fallback_time_range, n, include_domains, depth, raw))
     results = [r for g in got for r in g or []]
-    if not results and None in got:  # 실패로 데이터가 없음 → "반증 없음"과 구분해 기록
+    if not results and got[-1] is None:  # 가장 넓은 검색까지 실패해 데이터가 없음 → "반증 없음"과 구분해 기록
         FAILED_QUERIES.append({"query": query, "agent": agent})
     ids: list[str] = []
     blocked = tuple(cfg.search.exclude_domains)
