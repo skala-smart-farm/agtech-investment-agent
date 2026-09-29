@@ -6,13 +6,17 @@ LLM 은 평가표 질문에 판정(YES/NO/UNKNOWN/N/A)·근거 id·근거 원문
 - 점수·기준점·"유망" 같은 표현을 LLM 에 보여 주지 않는다
 - YES 는 인용문이 실제 근거 본문에 있어야 인정한다 (코드가 문자열로 검사). 실패하면 UNKNOWN 으로 강등
 - NO 도 반대 사실을 적은 문장의 인용이 본문에 있어야 인정한다. "근거가 없다"는 NO 가 아니라 UNKNOWN
+  (판정 이유가 "추정·확인되지 않음·근거가 없음" 같은 근거 부족이면 코드가 UNKNOWN 으로 바꾼다)
 - 제3자 근거·최근 24개월·문서 근거 요구 조건을 코드가 검사한다
+  (제3자 문항은 기사에 실렸어도 인용 주변에 대표·회사 측 발언이나 목표·계획·예정 표현이 있으면 인정하지 않는다)
+- 상용 운영 문항은 인용 주변에 예정·목표·실증·PoC·시범 표현이 있거나 인용에 수량·고객이 없으면 인정하지 않는다
 - UNKNOWN 은 0점이고 분모를 줄이지 않는다 (정보를 감춘 회사가 유리해지지 않게)
 """
 from __future__ import annotations
 
 import re
 from datetime import date, datetime
+from functools import lru_cache
 from typing import Literal
 
 import yaml
@@ -24,11 +28,23 @@ from core.prompts import render
 from rank_bm25 import BM25Okapi
 
 from rag.index import kiwi_tokenize
+from rag.loader import load_manifest
 from tools.grounding import fuzzy_in, norm
 from tools.sources import SourceRegistry
 
 AGENT = "decision"
 DB_SITES = {"THE VC", "혁신의숲"}
+# 아래 표지들은 공백·기호를 뺀 소문자 글자(norm)에서 찾는다
+# 제3자 근거 문항: 기사에 실렸어도 대표·회사 측 발언이나 목표·계획이면 제3자가 확인한 사실이 아니다
+COMPANY_VOICE = ("대표는", "대표가", "대표이사는", "대표의설명", "라고말했다", "라고밝혔다", "설명했다", "설명이다",
+                 "회사측", "회사는", "목표", "계획", "예정", "said", "plansto", "aimsto")
+# 상용 운영 문항: 예정·실증 단계를 뜻하는 표현
+PLANNED = re.compile(r"상용화를기점|상용화예정|출시예정|목표|실증|poc|proofofconcept|시범|(?<!auto)pilot")
+# 상용 운영 문항 YES 요건(설치 수·면적·두수·고객명): 숫자, 한글 수량 표현, 농협·법인 같은 고객 이름
+SCALE = re.compile(r"\d|(한|두|세|네|다섯|여섯|일곱|여덟|아홉|수십|수백|수천)(곳|개소|농가|농장|마리)|농협|영농조합|농업회사법인")
+# NO 판정 이유에 이런 말이 있으면 반대 사실이 아니라 근거 부족이다
+NO_HEDGE = re.compile(r"추정|불분명|명확하지않|확인되지않|없어|없으므로|근거가없")
+UNDISCLOSED = ("비공개", "미공개", "undisclosed", "비밀", "n/a")
 
 
 class Answer(BaseModel):
@@ -57,16 +73,44 @@ def _quote_sources(quote: str, cited: list[str], pool: list[str], reg: SourceReg
     return hit or [i for i in pool if fuzzy_in(quote, reg.text(i))]
 
 
-def _near_company(quote: str, text: str, keys: list[str], window: int = 300) -> bool:
-    """인용문이 나온 위치 앞뒤 window 글자 안에 회사명이 있는지 (문서 어딘가에 회사명만 있으면 되는 허점 차단)."""
+def _around(quote: str, text: str, window: int) -> str | None:
+    """인용문과 그 앞뒤 window 글자(공백·기호를 뺀 글자 기준). 근거 본문에서 위치를 못 찾으면 None."""
     t, q = _norm(text), _norm(quote)
     pos = t.find(q[:12]) if len(q) >= 12 else t.find(q)
     if pos < 0:  # 인용이 조금 달라 위치를 못 찾으면 인용 앞부분 여러 조각으로 다시 찾는다
         pos = next((t.find(q[i:i + 10]) for i in range(0, max(1, len(q) - 10), 10) if t.find(q[i:i + 10]) >= 0), -1)
     if pos < 0:
-        return False
-    near = t[max(0, pos - window): pos + len(q) + window]
-    return any(k in near for k in keys)
+        return None
+    return t[max(0, pos - window): pos + len(q) + window]
+
+
+def _near_company(quote: str, text: str, keys: list[str], window: int = 300) -> bool:
+    """인용문이 나온 위치 앞뒤 window 글자 안에 회사명이 있는지 (문서 어딘가에 회사명만 있으면 되는 허점 차단)."""
+    near = _around(quote, text, window)
+    return near is not None and any(k in near for k in keys)
+
+
+def _company_voice(quote: str, text: str, keys: list[str], window: int = 120) -> bool:
+    """인용 앞뒤 window 글자 안에 대표·회사 측 발언이나 목표·계획 표지가 있으면 True (제3자 근거 아님).
+    신문 기사라도 대표 인터뷰를 옮긴 문장이면 회사 자체 주장이다. 인용 위치를 못 찾으면 발화자를 확인할 수 없어 True."""
+    near = _around(quote, text, window)
+    if near is None:
+        return True
+    return any(v in near for v in COMPANY_VOICE) or any(k + "에따르면" in near for k in [*keys, "회사", "업체"])
+
+
+def _planned(quote: str, texts: list[str], window: int = 120) -> bool:
+    """상용 운영 문항: 인용이나 그 앞뒤 window 글자에 예정·목표·실증·PoC·시범 표현이 있으면 True."""
+    zones = [_norm(quote)] + [z for t in texts if (z := _around(quote, t, window))]
+    return any(PLANNED.search(z) for z in zones)
+
+
+def _has_scale(quote: str, keys: list[str]) -> bool:
+    """상용 운영 문항 YES 요건: 인용에 설치 수·면적·두수 같은 수량이나 고객 이름이 있는지 (회사 자신의 이름은 빼고 본다)."""
+    q = _norm(quote)
+    for k in keys:
+        q = q.replace(k, "")
+    return bool(SCALE.search(q))
 
 
 def _passages(pool: list[str], reg: SourceRegistry, size: int = 520, step: int = 420) -> list[tuple[str, str]]:
@@ -105,7 +149,19 @@ def _is_third_party(s: dict, company_keys: list[str]) -> bool:
     return not any(k and k in _norm(host) for k in company_keys)
 
 
+@lru_cache(maxsize=1)
+def _doc_years() -> dict:
+    """문서 코퍼스(data/manifest.yaml)의 doc_id → 발행 연도."""
+    return {m["doc_id"]: m.get("year") for m in load_manifest()}
+
+
 def _is_recent(s: dict, run_date: str) -> bool:
+    if s["kind"] == "doc" or s.get("id", "").startswith("D"):  # 문서는 manifest 의 발행 연도 ≥ 기준 연도 - 2 (쪽마다 날짜가 없음)
+        year = _doc_years().get(s.get("doc_id")) or s.get("year")
+        try:
+            return int(year) >= int(run_date[:4]) - 2
+        except (TypeError, ValueError):
+            return False
     if s["kind"] == "web" and s.get("site") in DB_SITES:
         return True  # 기업 DB 프로필은 현재 정보
     d = s.get("date") if s["kind"] == "web" else None
@@ -130,7 +186,7 @@ def _events_too_old(text: str, run_date: str) -> bool:
 
 def _round_rule(c: dict, run_date: str) -> tuple[str, list[str], str]:
     """D1: 최근 24개월 라운드의 단계·금액·시점. 적격성 검증 단계에서 원문 인용으로 확인된 값만 쓴다."""
-    ids, rd, amount = c.get("stage_evidence_ids") or [], str(c.get("round_date") or ""), c.get("round_amount") or ""
+    ids, rd, amount = c.get("stage_evidence_ids") or [], str(c.get("round_date") or ""), str(c.get("round_amount") or "")
     m = re.match(r"(20\d{2})(?:-(\d{1,2}))?", rd)
     if not ids or not m:
         return "UNKNOWN", [], "라운드 시점이 확인되지 않음 (코드 판정)"
@@ -139,8 +195,9 @@ def _round_rule(c: dict, run_date: str) -> tuple[str, list[str], str]:
     months = (run.year - y) * 12 + (run.month - mo)
     if months > 24:
         return "NO", ids, f"최근 라운드가 {rd} 로 24개월보다 오래됨 (코드 판정)"
-    if not amount:
-        return "UNKNOWN", [], f"{rd} {c.get('stage')} 라운드 금액 미공개 (코드 판정)"
+    # 금액은 숫자가 있고 '비공개·미공개' 같은 표현이 없을 때만 확인된 것으로 본다 ('비공개' 문자열을 금액으로 세지 않게)
+    if not re.search(r"\d", amount) or any(u in amount.lower() for u in UNDISCLOSED):
+        return "UNKNOWN", [], f"{rd} {c.get('stage')} 라운드 금액 비공개{f' ({amount})' if amount else ''} (코드 판정)"
     return "YES", ids, f"{rd} {c.get('stage')} {amount} — 적격성 검증에서 원문 인용으로 확인 (코드 판정)"
 
 
@@ -211,9 +268,13 @@ def decision_node(state: dict) -> dict:
             verdict = a.verdict if a else "UNKNOWN"
             ev = [i for i in (a.evidence_ids if a else []) if i in pool]
             note = a.rationale if a else "판정 누락"
+            quote = a.quote if a else ""
             if verdict == "N/A" and not q.get("na_allowed"):
                 verdict, note = "UNKNOWN", "N/A 불가 문항 — " + note
-            if verdict == "YES":
+            if q["id"] == "D1":  # 투자 라운드는 적격성 검증에서 인용 검증을 마친 값으로 코드가 판정 (LLM 판정은 쓰지 않음)
+                verdict, ev, note = _round_rule(c, run_date)
+                quote = c.get("stage_quote") or ""  # 적격성 검증에서 원문 확인을 마친 인용 (LLM 인용은 검증 전이라 쓰지 않음)
+            elif verdict == "YES":
                 fail = None
                 ev = _quote_sources(a.quote, ev, pool, reg)
                 if not ev:
@@ -224,6 +285,14 @@ def decision_node(state: dict) -> dict:
                     fail = "공공·연구기관 문서 근거 없음"
                 elif q.get("third_party") and not any(_is_third_party(reg.get(i), company_keys) for i in ev):
                     fail = "회사 자체 발표만 있음 (제3자 근거 필요)"
+                elif q.get("third_party") and not any(_is_third_party(reg.get(i), company_keys)
+                                                      and not _company_voice(a.quote, reg.text(i), company_keys)
+                                                      for i in ev):
+                    fail = "회사 측 발언·계획(제3자 근거 아님)"
+                elif q.get("commercial") and _planned(a.quote, [reg.text(i) for i in ev]):
+                    fail = "실증·예정 단계 (인용 주변에 예정·목표·실증·PoC·시범 표현)"
+                elif q.get("commercial") and not _has_scale(a.quote, company_keys):
+                    fail = "상용 규모 근거 없음 (인용에 설치 수·면적·두수·고객명이 없음)"
                 elif q.get("recent") and not any(_is_recent(reg.get(i), run_date) for i in ev):
                     fail = "최근 24개월 이내 근거 아님"
                 elif q.get("recent") and _events_too_old(f"{a.quote} {a.rationale}", run_date):
@@ -231,18 +300,18 @@ def decision_node(state: dict) -> dict:
                 if fail:
                     verdict, note = "UNKNOWN", f"{fail} → UNKNOWN 강등 ({note})"
                     rejected.append({"qid": q["id"], "reason": fail, "quote": a.quote})
-            if verdict == "NO":  # "근거가 없다"는 NO 가 아니라 UNKNOWN. 반대 사실을 적은 문장이 원문에 있어야 NO
+            elif verdict == "NO":  # "근거가 없다"는 NO 가 아니라 UNKNOWN. 반대 사실을 적은 문장이 원문에 있어야 NO
                 ev = _quote_sources(a.quote, ev, pool, reg) if a.quote.strip() else []
                 if not ev:
                     verdict, note = "UNKNOWN", f"반대 근거 인용이 원문에서 확인되지 않음 → NO 대신 UNKNOWN ({note})"
-            if q["id"] == "D1":  # 투자 라운드는 적격성 검증에서 인용 검증을 마친 값으로 코드가 판정
-                verdict, ev, note = _round_rule(c, run_date)
+                elif NO_HEDGE.search(re.sub(r"\s+", "", a.rationale)):  # 이유가 "추정·확인되지 않음·근거가 없어" 류
+                    verdict, note = "UNKNOWN", f"반대 사실이 아니라 근거 부족 → NO 대신 UNKNOWN ({note})"
             yes += verdict == "YES"
             unknown += verdict == "UNKNOWN"
             na += verdict == "N/A"
             rows.append({"dim": d["id"], "qid": q["id"], "question": q["text"], "bessemer": q.get("bessemer", ""),
                          "answer": verdict, "evidence_ids": ev if verdict in ("YES", "NO") else [],
-                         "quote": a.quote if (a and verdict in ("YES", "NO")) else "", "rationale": note})
+                         "quote": quote if verdict in ("YES", "NO") else "", "rationale": note})
         n = len(d["questions"]) - na
         score = d["weight"] * yes / n if n else 0.0
         dims.append({"id": d["id"], "name": d["name"], "weight": d["weight"], "yes": yes, "unknown": unknown,
