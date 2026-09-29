@@ -12,8 +12,9 @@ documents:
   - {doc_id: mafra_plan2025, file: kr_mafra_2025_smartagri_basic_plan.pdf, type: report, lang: ko, pages_total: 43,
      publisher: 농림축산식품부, year: 2025, title: "제1차 스마트농업 육성 기본계획(2025~2029년)",
      url: "https://www.mafra.go.kr/bbs/home/792/573035/artclView.do", role: "정책 목표·지원 제도·시장 수치·진입 장벽"}
-  - {doc_id: krei_market2024, file: kr_krei_2024_smartagri_market_employment.pdf, type: report, lang: ko, pages_total: 16,
-     publisher: 한국농촌경제연구원, year: 2024, title: "스마트 농업과 농업 부문 고용 현황 및 전망",
+  - {doc_id: krei_market2024, file: kr_krei_2024_smartagri_market_employment.pdf, type: paper, lang: ko, pages_total: 16,
+     publisher: 한국농촌경제연구원, authors: 박미선, journal: 세계농업, volume: 2024, issue: 겨울호, pages: 33-48,
+     year: 2024, title: "스마트 농업과 농업 부문 고용 현황 및 전망",
      url: "https://www.krei.re.kr/wldagr/page/236?cmd=view&biblioId=542406&pageIndex=1", role: "기관별 스마트농업 시장 추정치 비교"}
   - {doc_id: kdi_agtech2023, file: kr_kdi_2023_agtech_policy_review.pdf, type: report, lang: ko, pages_total: 18,
      publisher: KDI 경제교육·정보센터, year: 2023, title: "애그테크, 선택 아닌 필수 - 주요국의 애그테크 산업 정책 동향을 중심으로",

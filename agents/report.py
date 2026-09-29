@@ -69,6 +69,7 @@ class CompetitorNote(BaseModel):
 
 class CandidateNote(BaseModel):
     name: str = Field(description="심층 평가한 후보 회사명 그대로")
+    business: str = Field(description="사업 한 줄 요약 (한국어, 50자 이내, 근거가 영어여도 한국어로)")
     why_not: str = Field(description="보류 사유 2~3문장: 결정적 반대 근거와 확인되지 않은 핵심 항목 (근거 id)")
     recheck: str = Field(description="재검토 조건 한 문장")
 
@@ -151,7 +152,8 @@ def _pool_rows(p: dict) -> list[dict]:
     rej = "; ".join(f"{name} — {reason}" for name, reason in p["rejected"])
     return [
         {"stage": "발굴", "total": n(p["discovered"]), "kr": n(p["disc_split"][0]), "gl": n(p["disc_split"][1]),
-         "note": f"발굴 {p['rounds']}라운드, 라운드당 최대 {p['per_round']}곳을 적격성 검증으로 넘김"},
+         "note": f"발굴 {p['rounds']}라운드" + (" (라운드 합계, 중복 포함)" if p["rounds"] > 1 else "")
+                 + f", 라운드당 최대 {p['per_round']}곳을 적격성 검증으로 넘김"},
         {"stage": "적격성 검증", "total": p["screened"], "kr": p["scr_split"][0], "gl": p["scr_split"][1],
          "note": f"탈락 {len(p['rejected'])}곳" + (f": {rej}" if rej else "")},
         {"stage": "적격 (비상장·Seed~C·Exit 전)", "total": p["eligible"], "kr": p["el_split"][0], "gl": p["el_split"][1],
@@ -176,12 +178,20 @@ def _request(pool: dict) -> str:
     return "재검토 조건 충족 시 재평가 승인 여부" + (f", 미평가 적격 {rest}곳 추가 심층 평가 승인 여부" if rest else "")
 
 
-def summary_lines(draft: _Body, conclusion: str, request: str = "") -> list[str]:
-    """SUMMARY 4~5줄. 결론·요청 줄은 코드가 평가 결과로 쓴다 (순서·수치 오류 방지)."""
+def _situation(pool: dict) -> str:
+    """모두 보류일 때 SUMMARY 상황 줄: 평가 범위를 코드가 사실대로 쓴다."""
+    ev_kr, ev_gl = pool["ev_split"]
+    disc = f"{pool['discovered']}곳을 발굴해 " if pool.get("discovered") else ""
+    return (f"국내외 AgTech AI 스타트업 {disc}{pool['screened']}곳을 검증했고, 적격 {pool['eligible']}곳 중 "
+            f"{pool['evaluated']}곳(국내 {ev_kr}·해외 {ev_gl})을 심층 평가했다.")
+
+
+def summary_lines(draft: _Body, conclusion: str, request: str = "", situation: str | None = None) -> list[str]:
+    """SUMMARY 4~5줄. 결론·요청 줄(모두 보류면 상황 줄도)은 코드가 평가 결과로 쓴다 (순서·수치 오류 방지)."""
     def bare(x: str) -> str:  # LLM 이 칸 이름을 앞에 또 붙인 경우 ("재검토 조건: …")
         return re.sub(r"^\s*(상황|근거|조건|재검토 조건|투자 조건)\s*[:：]\s*", "", x)
 
-    return [f"상황: {bare(draft.situation)}", f"결론: {conclusion}", f"근거: {bare(draft.key_evidence)}",
+    return [f"상황: {situation or bare(draft.situation)}", f"결론: {conclusion}", f"근거: {bare(draft.key_evidence)}",
             f"조건: {bare(draft.condition)}"] + ([f"요청: {request}"] if request else [])
 
 
@@ -196,8 +206,11 @@ def _summary_problems(lines: list[str], limit: int) -> list[str]:
     return probs
 
 
+SUP_NEGATION = re.compile(r"않|없|미확인|불가|못|확인되지")  # 우열 단정을 부정하는 말만 (조건·필요는 면제하지 않음)
+
+
 def _superiority(text: str) -> re.Match | None:
-    return next((m for m in SUPERIORITY.finditer(text) if not NEGATION.search(text[m.end(): m.end() + 16])), None)
+    return next((m for m in SUPERIORITY.finditer(text) if not SUP_NEGATION.search(text[m.end(): m.end() + 12])), None)
 
 
 def _claim_problems(text: str, verdict: dict, who: str = "") -> list[str]:
@@ -232,10 +245,10 @@ def _stale_forecasts(text: str, run_date: str) -> list[str]:
     """이미 지난 기간의 전망('2025년 … 전망')을 미래처럼 쓴 문장. '(2022년 발표 전망)'처럼 발표 시점을 밝히면 허용."""
     year, out = int(run_date[:4]), []
     for sent in re.split(r"(?<=[.。])\s+|(?<=다)\s+|\n", CITE.sub("", text)):
-        if "발표" in sent:
+        if "발표" in sent or re.search(r"확인 불가|미확인", sent):
             continue
         for m in re.finditer(r"전망", sent):
-            years = [int(y) for y in re.findall(r"20\d{2}", sent[max(0, m.start() - 60): m.start()])]
+            years = [int(y) for y in re.findall(r"(20\d{2})년?(?!\s*(?:기준|에서|대비))", sent[max(0, m.start() - 60): m.start()])]
             if years and max(years) < year:
                 out.append(f"'{sent.strip()[:40]}…' — {max(years)}년은 이미 지났다. 지난 기간의 전망이면 "
                            f"'(20XX년 발표 전망)'처럼 발표 시점을 밝히거나 최신 수치로 바꿔라")
@@ -251,10 +264,23 @@ def _consistency_problems(draft: _Body, target: dict, evals: list[dict], run_dat
               draft.tech_team, draft.industry_baseline, draft.competition]
     if isinstance(draft, Draft):
         fields.append(draft.decision_rationale)
-    tables = [c.vs_target for c in draft.competitor_notes] + [f"{r.content} {r.due_diligence}" for r in draft.risks]
+    tables = [c.vs_target for c in draft.competitor_notes] + [r.content for r in draft.risks]  # 실사 항목 칸은 확인할 일이라 제외
     text = "\n".join(fields + tables)
-    probs = _claim_problems(text, verdict)
     notes = ""
+    if isinstance(draft, HoldDraft):
+        body = "\n".join(fields[2:] + tables)  # 최고점 후보 상세(3장)는 그 후보의 평가표로
+        probs = _claim_problems(body, verdict)
+        verdicts = {e["name"]: {r["qid"]: r["answer"] for r in e["scorecard"]["rows"]} for e in evals}
+        # 후보 이름이 없는 요약 문장은 한 후보라도 YES 면 허용
+        any_yes = {q: "YES" for v in verdicts.values() for q, a in v.items() if a == "YES"}
+        for sent in re.split(r"(?<=[.。])\s+|(?<=다)\s+", f"{draft.situation} {draft.key_evidence}"):
+            named = [e for e in evals if any(n and n in sent for n in _names(e))]
+            for e in named:
+                probs += _claim_problems(sent, verdicts[e["name"]], f"[{e['name']}] ")
+            if not named:
+                probs += _claim_problems(sent, any_yes)
+    else:
+        probs = _claim_problems(text, verdict)
     if isinstance(draft, HoldDraft):  # 후보별 보류 사유는 그 후보의 평가표와 맞춘다
         for note in draft.candidates:
             e = next((e for e in evals if any(_same(note.name, n) for n in _names(e))), None)
@@ -268,7 +294,9 @@ def _consistency_problems(draft: _Body, target: dict, evals: list[dict], run_dat
         if missing:
             probs.append(f"candidates 에 {', '.join(missing)} 가 없다 — 심층 평가한 후보마다 하나씩 써라")
         notes = "\n".join(f"{n.why_not} {n.recheck}" for n in draft.candidates)
-    probs += _maturity_problems(draft.situation, verdict.get("P1"))
+    top_sents = " ".join(s for s in re.split(r"(?<=[.。])\s+|(?<=다)\s+", draft.situation)
+                         if not isinstance(draft, HoldDraft) or any(n and n in s for n in _names(target)))
+    probs += _maturity_problems(top_sents, verdict.get("P1"))
     probs += _stale_forecasts(f"{text}\n{notes}", run_date)
     for rj in sc.get("rejected_yes", []):  # 판정 단계에서 원문 확인에 실패해 기각된 주장이 다시 나오면 안 된다
         q = norm(rj.get("quote", ""))
@@ -427,8 +455,11 @@ def _candidate_blocks(evals: list[dict], notes: list[CandidateNote], reg: Source
     for e in evals:
         p, rows = e["profile"], e["scorecard"]["rows"]
         note = next((n for n in notes if any(_same(n.name, x) for x in _names(e))), None)
+        one_line = p.get("one_line") or "-"
         if note:
             why, recheck = note.why_not, note.recheck
+            if note.business and re.search(r"[가-힣]", note.business):  # 영어 원문 요약 대신 한국어 한 줄
+                one_line = note.business
         else:
             no = [short[r["qid"]] for r in rows if r["answer"] == "NO"]
             unk = [short[r["qid"]] for r in rows if r["answer"] == "UNKNOWN"]
@@ -437,7 +468,7 @@ def _candidate_blocks(evals: list[dict], notes: list[CandidateNote], reg: Source
         fail = next((v for k, v in failed_by.items() if any(_same(k, x) for x in _names(e))), 0)
         facts = [_team_line(e, reg), _nps_line(p), _stage_line(p, reg)] + ([f"대상 웹 검색 {fail}건 실패"] if fail else [])
         out.append({"name": e["name"], "kind": get_segment(e["segment_id"])["name"], "total": e["total"],
-                    "decision": e["decision"], "one_line": p.get("one_line") or "-", "facts": " · ".join(x for x in facts if x),
+                    "decision": e["decision"], "one_line": one_line, "facts": " · ".join(x for x in facts if x),
                     "reasons": ", ".join(_human_knockouts(e["knockouts"])) or "-", "why_not": why, "recheck": recheck})
     return out
 
@@ -603,6 +634,7 @@ def report_node(state: dict) -> dict:
     failed_by = _failed_by_company(list(getattr(search_tool, "FAILED_QUERIES", []) or []), companies)
     conclusion = _conclusion(target, pool, bool(invested))
     request = _request(pool) if hold else ""
+    situation = _situation(pool) if hold else None
     verdict = {r["qid"]: r["answer"] for r in sc["rows"]}
     tech = {k: v for k, v in target["tech"].items() if k != "pool_ids"}
     if verdict.get("C1") != "YES":
@@ -658,7 +690,7 @@ def report_node(state: dict) -> dict:
     draft, feedback, probs = None, "", []
     for _ in range(3):
         draft = structured(schema).invoke(render("report", **ctx, feedback=feedback, shorten=False))
-        probs = (_summary_problems(summary_lines(draft, conclusion, request), cfg.report.summary_max_chars)
+        probs = (_summary_problems(summary_lines(draft, conclusion, request, situation), cfg.report.summary_max_chars)
                  + _consistency_problems(draft, target, evals, run_date))
         if not probs:
             break
@@ -676,7 +708,7 @@ def report_node(state: dict) -> dict:
     result, density, shorten_round = {}, 0, 0
     while True:
         dd = draft.model_dump()
-        dd["summary"] = summary_lines(draft, conclusion, request)
+        dd["summary"] = summary_lines(draft, conclusion, request, situation)
         dd["limitations"] = _limitations(cfg, pool, failed_by, dd["data_limits"], hold)
         tables = {
             "competitors": _competitor_rows(target, reg, draft.competitor_notes, verdict.get("C2") == "YES"),
@@ -690,7 +722,8 @@ def report_node(state: dict) -> dict:
                        "scores": _score_rows(ranked), "decisive": _decisive_rows(sc, short)}
         else:
             tables |= {"rows": _judgment_rows(sc), "candidates": _candidate_rows(evals, screened, pool)}
-        d, t, refs = _renumber(dd, tables, reg)
+        shown = {k: v for k, v in dd.items() if k not in ("competitor_notes", "candidates", "risks", "data_limits")}
+        d, t, refs = _renumber(shown, tables, reg)
         view = {
             "title": title, "run_date": run_date, "domain": cfg.domain.name, "decision": target["decision"], "hold": hold,
             "badge": "투자 권고 없음" if hold else "투자 권고", "target": target, "profile": prof, "draft": d,
@@ -776,7 +809,8 @@ def _to_markdown(v: dict) -> str:
               "## 5. 한계점"]
     else:
         L += [f"## 6. 투자 판단: {v['decision']} ({sc['total']}점 / 기준 {sc['threshold']}점)", d["decision_rationale"], "",
-              "| 항목 | 가중치 | YES/판정 문항 | UNKNOWN | 점수 |", "|---|---|---|---|---|",
+              "기준점 민감도: " + ", ".join(f"{k}점 {x}" for k, x in sc["sensitivity"].items()), "",
+              "| 항목 | 가중치 | 확인/판정 문항 | 미확인 | 점수 |", "|---|---|---|---|---|",
               *[f"| {x['name']} | {x['weight']} | {x['yes']}/{x['n']} | {x['unknown']} | {x['score']} |" for x in sc["dims"]],
               "", "| ID | 판정 | 근거·이유 |", "|---|---|---|", *[f"| {r['qid']} | {r['answer']} | {r['rationale']} |" for r in t["rows"]],
               "", "### 후보별 판단", "", "| 후보 | 분야·단계 | 총점 | 판단 | 사유 | 확인되지 않은 근거 |", "|---|---|---|---|---|---|",

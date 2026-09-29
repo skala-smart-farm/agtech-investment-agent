@@ -82,17 +82,23 @@ def _date_from(url: str, text: str) -> str | None:
                 r"(20\d{2})\s?년\s?(\d{1,2})\s?월\s?(\d{1,2})\s?일",
                 r"(20\d{2})[.-]\s?(\d{1,2})[.-]\s?(\d{1,2})"):
         for m in re.finditer(pat, head):  # "설립일 2022-09-02", "설립연월일: …", "2022년 9월 2일 설립" 은 건너뛴다
-            if (re.search(r"설립(?:일|연월일)?\s*[:：]?\s*$", head[max(0, m.start() - 10): m.start()])
-                    or re.match(r"\s*(?:에\s*)?설립(?!일|연월일)", head[m.end(): m.end() + 8])):
+            if (re.search(r"(?:설립|창립|창업|Founded)(?:일자?|연월일|년월일)?\s*[:：]?\s*$", head[max(0, m.start() - 12): m.start()])
+                    or re.match(r"\s*(?:[-–]\s*)?(?:에\s*)?(?:설립|창립)(?!일|연월일)", head[m.end(): m.end() + 10])):
                 continue
             if 1 <= int(m.group(2)) <= 12 and 1 <= int(m.group(3)) <= 31:
                 return f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
     return None
 
 
+NOT_REPORTER = {"사진", "취재", "전문", "객원", "구독", "담당", "정책", "축산", "농업", "산업"}
+
+
 def _author(text: str) -> str | None:
-    m = re.search(r"([가-힣]{2,4})\s?기자", text or "")
-    return f"{m.group(1)} 기자" if m else None
+    """바이라인의 기자 이름. '스마트농업 기자재'·'사진기자' 같은 말은 이름으로 보지 않는다."""
+    for m in re.finditer(r"(?<![가-힣])([가-힣]{2,4})\s?기자(?![가-힣])", text or ""):
+        if m.group(1) not in NOT_REPORTER:
+            return f"{m.group(1)} 기자"
+    return None
 
 
 class SourceRegistry:
@@ -189,11 +195,11 @@ def _host(url: str) -> str:
 def _origin(s: dict) -> tuple[str | None, str | None]:
     """포털 전재본의 (원 매체, 기자). 못 찾으면 None."""
     text = " ".join(x for x in (s.get("body"), s.get("snippet")) if x)
-    for pat in (r"Copyright\s*[ⓒ©]\s*([^&.,<>\[\]]{2,20}?)\s*(?:&|\.|,|All rights|무단|$)",
+    for pat in (r"Copyright\s*[ⓒ©]\s*(?:(?:19|20)\d{2}\s*)?([^&.,<>\[\]]{2,20}?)\s*(?:&|\.|,|All rights|무단|$)",
                 r"([가-힣A-Za-z0-9]{2,12})\s*원문\s*기사전송",
-                r"[ⓒ©]\s*(?:['‘\"“][^'’\"”]{0,30}['’\"”]\s*)?([가-힣A-Za-z0-9]{2,12})"):
+                r"[ⓒ©]\s*(?:(?:19|20)\d{2}\s*)?(?:['‘\"“][^'’\"”]{0,30}['’\"”]\s*)?([가-힣A-Za-z0-9]{2,12})"):
         for m in re.finditer(pat, text):
-            if not _PORTAL_OWN.search(m.group(1)):
+            if not _PORTAL_OWN.search(m.group(1)) and not m.group(1).strip().isdigit():
                 return m.group(1).strip(), _author(text)
     return None, _author(text)
 
@@ -238,8 +244,9 @@ def _ref_title(s: dict) -> str:
         for sep in (" | ", " - "):
             if sep in title:
                 head, tail = title.rsplit(sep, 1)
-                if len(tail.strip()) >= 2 and (tail.strip() in (s.get("site") or "")
-                                               or re.search(r"기업가치|스타트업 조회|데이터랩", tail)):
+                site = (s.get("site") or "").strip()
+                if len(tail.strip()) >= 2 and (tail.strip() == site or (site and site.endswith(tail.strip()))
+                                               or re.search(r"기업가치|기업정보|스타트업 조회|데이터랩|THE VC|혁신의숲", tail)):
                     title = head.strip()
     return title
 

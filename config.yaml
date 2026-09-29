@@ -44,6 +44,7 @@ search:
   exclude_domains:                     # 출처 신뢰도가 낮은 개인 블로그·커뮤니티·주식 카페는 근거에서 제외
     [blog.naver.com, m.blog.naver.com, cafe.naver.com, tistory.com, brunch.co.kr, velog.io, medium.com,
      youtube.com, facebook.com, instagram.com, linkedin.com, namu.wiki, reddit.com, x.com, twitter.com,
+     finance.daum.net, fdatabot.com,        # 주가 시세 페이지, 로봇 판매업체의 경쟁사 목록 홍보 글
      # 유료 시장조사 보고서 홍보 페이지: 출처마다 수치 편차가 크고 원문 확인이 안 됨 → 시장 수치는 공공 문서를 우선
      imarcgroup.com, mordorintelligence.com, mordorintelligence.kr, gminsights.com, precedenceresearch.com,
      marketsandmarkets.com, fortunebusinessinsights.com, grandviewresearch.com, researchandmarkets.com,
