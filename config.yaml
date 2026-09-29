@@ -3,14 +3,14 @@
 domain:
   name: AgTech
   description: "AI·센서·로봇으로 작물 재배, 병해충 진단, 수확, 축산 등 농업 생산성을 높이는 기술"
-  region_priority: [KR, GLOBAL]        # 국내 스타트업을 먼저 평가하고, 부족하면 해외로 넓힌다
+  region_priority: [KR, GLOBAL]        # 같은 순번이면 국내 먼저. 검증·평가 슬롯은 workflow.screen_kr : screen_global 로 나눈다
   # 세부 분야: 발굴 쿼리와 시장 분석 단위로 쓴다 (ko: 한국어 검색어, en: 영문 검색어)
   segments:
     - {id: greenhouse, name: "스마트팜·시설원예 AI 환경제어", ko: "스마트팜 AI", en: "AI greenhouse controlled environment agriculture"}
     - {id: diagnosis, name: "작물 생육·병해충 진단 AI", ko: "작물 병해충 진단 AI", en: "AI crop disease detection"}
     - {id: robotics, name: "농업 로봇·자율주행 농기계", ko: "농업 로봇", en: "agricultural robotics autonomous tractor"}
     - {id: livestock, name: "축산 AI(가축 건강·사양 관리)", ko: "축산 AI", en: "livestock AI health monitoring"}
-    - {id: agdata, name: "농업 데이터·유통 플랫폼 AI", ko: "농업 데이터 플랫폼", en: "agriculture data platform AI"}
+    - {id: agdata, name: "농업 생산 데이터(생육·환경·수확 예측) AI", ko: "농업 데이터 플랫폼", en: "agriculture data platform AI"}
 
 models:
   generator: gpt-4.1-mini              # 분석·보고서 작성
@@ -33,7 +33,7 @@ rag:
   top_k: 4                             # 최종 컨텍스트 조각 수 (3~5 범위)
   candidate_k: 8                       # 앙상블 전에 각 검색기가 가져오는 수
   ensemble_weights: [0.3, 0.7]         # [Kiwi BM25, FAISS dense] — 0.5:0.5 보다 두 질문 세트 모두에서 Hit@5 가 높음
-  min_relevant: 2                      # 관련 조각이 이보다 적으면 질의 재작성
+  min_relevant: 3                      # 최종 4개 중 3개 이상 관련이어야 통과 (적으면 질의 재작성)
   max_rewrites: 2                      # Agentic RAG 재작성 루프 상한
   web_fallback: true                   # 재작성 후에도 부족하면 웹 검색으로 보완
 
@@ -54,9 +54,11 @@ search:
      skyquestt.com, polarismarketresearch.com, zionmarketresearch.com, emergenresearch.com, stellarmr.com]
 
 workflow:
-  max_candidates_per_round: 16         # 한 번의 발굴 라운드에서 검증할 최대 후보 수
+  max_candidates_per_round: 18         # 한 번의 발굴 라운드에서 검증할 최대 후보 수 (= screen_kr + screen_global)
+  screen_kr: 12                        # 검증 슬롯 지역별 몫: 국내 12 + 해외 6. 평가 대기열도 같은 비율로 섞는다
+  screen_global: 6                     # (국내만 앞에 두면 해외 후보가 검증에 오지 못함). 한쪽이 모자라면 다른 쪽이 채운다
   max_discovery_rounds: 2              # 후보가 바닥나면 발굴을 다시 도는 횟수 상한
-  max_evaluations: 4                   # 심층 평가(기술·시장·경쟁·판단)를 반복할 최대 스타트업 수
+  max_evaluations: 10                  # 심층 평가(기술·시장·경쟁·판단)를 반복할 최대 스타트업 수
 
 decision:
   invest_threshold: 70                 # 100점 만점, 이상이면 "투자"
