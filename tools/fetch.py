@@ -26,15 +26,26 @@ def _cache(url: str):
     return path(f"{get_config().cache.dir}/articles/{h}.json")
 
 
+def cached(url: str) -> dict | None:
+    """이미 받아 둔 원문(재현용 캐시)만 읽는다. 네트워크는 쓰지 않는다. 없거나 실패 기록이면 None."""
+    if not (url or "").startswith("http"):
+        return None
+    f = _cache(url)
+    if not f.exists():
+        return None
+    d = json.loads(f.read_text(encoding="utf-8"))
+    return None if d.get("error") else d
+
+
 def fetch(url: str) -> dict | None:
-    """원문 본문과 게시일. 실패하면 None (실패도 캐시해 재현 때 같은 결과)."""
+    """원문 본문·게시일·제목. 실패하면 None (실패도 캐시해 재현 때 같은 결과).
+    제목은 검색 결과 제목이 "..." 로 잘렸을 때 REFERENCE 에 쓴다 (예전 캐시에는 없음)."""
     host = url.split("/")[2].lower() if url.count("/") >= 2 else ""
     if not url.startswith("http") or url.lower().endswith(".pdf") or host.endswith(SKIP):
         return None
     f = _cache(url)
     if f.exists():
-        d = json.loads(f.read_text(encoding="utf-8"))
-        return None if d.get("error") else d
+        return cached(url)
     if os.getenv("REPLAY_OFFLINE"):
         return None
     import requests
@@ -45,7 +56,8 @@ def fetch(url: str) -> dict | None:
         r.raise_for_status()
         meta = trafilatura.extract(r.text, url=url, with_metadata=True, output_format="json")
         d = json.loads(meta) if meta else {}
-        out = {"text": re.sub(r"\s+", " ", d.get("text") or "")[:6000], "date": d.get("date") or ""}
+        out = {"text": re.sub(r"\s+", " ", d.get("text") or "")[:6000], "date": d.get("date") or "",
+               "title": (d.get("title") or "").strip()}
         if len(out["text"]) < 200:
             raise ValueError("본문이 너무 짧음")
     except Exception as e:
