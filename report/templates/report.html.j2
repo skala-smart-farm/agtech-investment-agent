@@ -19,6 +19,7 @@
   ul.idea { margin: 2pt 0 4pt; padding-left: 14pt; } ul.idea li { margin: 1.5pt 0; }
   h2 { font-size: {{ fs + 2 }}pt; color: #12213f; margin: {{ [11, 9, 8, 7][density] }}pt 0 3pt; padding-bottom: 2pt;
        border-bottom: 1.5pt solid #d8dee9; break-after: avoid; }
+  h3 { font-size: {{ fs + 0.5 }}pt; color: #12213f; margin: 6pt 0 2pt; break-after: avoid; }
   p { margin: 2pt 0 4pt; text-align: justify; }
   #summary { border: 1.6pt solid #12213f; border-radius: 6pt; padding: 7pt 11pt 6pt; background: #f5f7fb; }
   #summary h2 { margin-top: 0; border: none; font-size: 11pt; letter-spacing: 0.08em; }
@@ -52,6 +53,7 @@
     <li><b>제품·핵심 컨셉</b> {{ draft.product }}</li>
     <li><b>수익 방식</b> {{ draft.revenue_model }}</li>
     <li><b>투자 단계</b> {{ profile.stage }} ({{ profile.round_date or '시점 미상' }}, {{ profile.round_amount or '금액 미공개' }})</li>
+    {% if draft.nps_line %}<li><b>고용·창업 시기</b> {{ draft.nps_line }}</li>{% endif %}
   </ul>
 
   <h2>2. 시장 규모와 성장성</h2>
@@ -94,10 +96,11 @@
     <tr><td>{{ r.qid }}</td><td>{{ r.question }}</td><td class="{{ 'yes' if r.answer == 'YES' else 'no' }}">{{ r.answer }}</td><td>{{ r.rationale }}</td></tr>
     {% endfor %}
   </table>
-  {% if evals | length > 1 %}
+  {% if tables.candidates | length > 1 %}
+  <h3>후보별 보류·탈락 사유</h3>
   <table class="small">
-    <tr><th>심층 평가 후보 (총점순)</th><th>분야</th><th>단계</th><th>총점</th><th>판단</th><th>보류 사유</th></tr>
-    {% for e in evals %}<tr><td>{{ e.name }}</td><td>{{ e.segment_id }}</td><td>{{ e.stage }}</td><td class="num">{{ e.total }}</td><td>{{ e.decision }}</td><td>{{ e.knockouts | join(', ') }}</td></tr>{% endfor %}
+    <tr><th style="width:12%">후보</th><th style="width:16%">분야·단계</th><th style="width:6%">총점</th><th style="width:6%">판단</th><th style="width:28%">사유</th><th>확인되지 않은 근거</th></tr>
+    {% for c in tables.candidates %}<tr><td>{{ c.name }}</td><td>{{ c.kind }}</td><td class="num">{{ c.total }}</td><td>{{ c.decision }}</td><td>{{ c.reasons }}</td><td>{{ c.gaps }}</td></tr>{% endfor %}
   </table>
   {% endif %}
 

@@ -69,7 +69,32 @@ def _conclusion(target: dict, evals: list[dict], any_invest: bool) -> str:
         return (f"투자 권고 — {target['name']} 총점 {sc['total']}/100 (기준 {sc['threshold']}점), "
                 f"핵심 항목·Deal-killer·정보량 기준 충족")
     best = f"최고점 {target['name']} {sc['total']}/100, 기준 {sc['threshold']}점"
-    return f"투자 권고 대상 없음 — 심층 평가 {len(evals)}곳 모두 보류 ({best}; {', '.join(sc['reasons'])})"
+    return (f"투자 권고 대상 없음 — 심층 평가 {len(evals)}곳 모두 보류 ({best}; {', '.join(sc['reasons'])}). "
+            f"후보별 사유는 6장 표")
+
+
+def _candidate_rows(evals: list[dict], screened: list[dict]) -> list[dict]:
+    """후보마다 왜 투자하지 않는지 (과제: 모두 보류면 각 후보가 안 되는 이유로 보고서를 구성).
+    LLM 이 아니라 코드가 평가 결과에서 만든다: 보류 사유 + 반대 근거가 있는 문항 + 근거를 못 찾은 문항."""
+    from agents.decision import load_rubric
+    from core.config import get_segment
+
+    short = {q["id"]: q["short"] for d in load_rubric()["dimensions"] for q in d["questions"]}
+    out = []
+    for e in sorted(evals, key=lambda e: -e["total"]):
+        rows = e["scorecard"]["rows"]
+        no = [short[r["qid"]] for r in rows if r["answer"] == "NO"]
+        unk = [short[r["qid"]] for r in rows if r["answer"] == "UNKNOWN"]
+        gaps = ([f"반대 근거: {', '.join(no)}"] if no else []) + (
+            [f"미확인 {len(unk)}개: {', '.join(unk[:5])}" + (" 등" if len(unk) > 5 else "")] if unk else [])
+        out.append({"name": e["name"], "kind": f"{get_segment(e['segment_id'])['ko']} · {e.get('stage') or '-'}",
+                    "total": e["total"], "decision": e["decision"], "reasons": ", ".join(e["knockouts"]) or "-",
+                    "gaps": " / ".join(gaps) or "-"})
+    for c in screened:
+        if not c.get("eligible"):
+            out.append({"name": c.get("official_name") or c["name"], "kind": f"적격성 검증 · {c.get('stage') or '-'}",
+                        "total": "-", "decision": "탈락", "reasons": c.get("reason") or "-", "gaps": "심층 평가 대상 아님"})
+    return out
 
 
 def summary_lines(draft: Draft, conclusion: str) -> list[str]:
@@ -204,7 +229,7 @@ def report_node(state: dict) -> dict:
     ctx = {
         "domain": cfg.domain.name, "decision": target["decision"], "any_invest": bool(invested), "conclusion": conclusion,
         "profile": json.dumps({k: prof.get(k) for k in ("official_name", "region", "one_line", "founded_year", "stage",
-                                                        "round_date", "round_amount")}, ensure_ascii=False),
+                                                        "round_date", "round_amount", "nps")}, ensure_ascii=False),
         "tech": json.dumps(tech, ensure_ascii=False),
         "market": json.dumps({k: v for k, v in target["market"].items() if k != "pool_ids"}, ensure_ascii=False),
         "competition": json.dumps({k: v for k, v in target["competition"].items() if k != "pool_ids"},
@@ -228,7 +253,8 @@ def report_node(state: dict) -> dict:
             break
         feedback = "직전 초안의 문제를 모두 고쳐라:\n- " + "\n- ".join(probs)
 
-    tables = {"competitors": _competitor_rows(target, reg), "rows": _judgment_rows(sc)}
+    tables = {"competitors": _competitor_rows(target, reg), "rows": _judgment_rows(sc),
+              "candidates": _candidate_rows(evals, screened)}
     title = (f"{prof['official_name']} 투자 검토 — 투자 권고" if invested
              else f"AgTech AI 스타트업 투자 검토 — 투자 권고 대상 없음 (최고점: {prof['official_name']})")
     team = cfg.submission
@@ -242,6 +268,9 @@ def report_node(state: dict) -> dict:
         dd = draft.model_dump()
         dd["summary"] = summary_lines(draft, conclusion)
         dd["limitations"] = dd["data_limits"][:2] + method_limits
+        n = prof.get("nps") or {}
+        dd["nps_line"] = (f"국민연금 가입자 {n['members']}명({n['ym']} 기준), 최초 가입 {n['first_date']}"
+                          f" [{n['evidence_id']}]") if n.get("status") == "matched" and n.get("evidence_id") else ""
         d, t, refs = _renumber(dd, tables, reg)
         html = render_html({
             "title": title, "run_date": state.get("run_date"), "domain": cfg.domain.name, "decision": target["decision"],
@@ -290,7 +319,8 @@ def _to_markdown(title, d, t, refs, sc, target, evals, run_date, verdict) -> str
          "## 1. 사업 아이디어", f"- 해결하는 문제: {d['problem']}", f"- 제품·핵심 컨셉: {d['product']}",
          f"- 수익 방식: {d['revenue_model']}",
          f"- 투자 단계: {target['profile'].get('stage')} ({target['profile'].get('round_date') or '시점 미상'}, "
-         f"{target['profile'].get('round_amount') or '금액 미공개'})", "",
+         f"{target['profile'].get('round_amount') or '금액 미공개'})",
+         *([f"- 고용·창업 시기: {d['nps_line']}"] if d.get("nps_line") else []), "",
          "## 2. 시장 규모와 성장성", d["market"], "",
          "## 3. 기술력과 팀", d["tech_team"], "", f"업계 기술 수준 대비: {d['industry_baseline']}", "",
          "## 4. 경쟁 구도", d["competition"], "",
@@ -304,8 +334,10 @@ def _to_markdown(title, d, t, refs, sc, target, evals, run_date, verdict) -> str
          "", f"보류 사유: {', '.join(sc['reasons']) or '없음'} / 기준점 민감도: "
              + ", ".join(f"{k}점 {v}" for k, v in sc["sensitivity"].items()), "",
          "| ID | 판정 | 근거·이유 |", "|---|---|---|", *[f"| {r['qid']} | {r['answer']} | {r['rationale']} |" for r in t["rows"]],
-         "", "| 심층 평가 후보 | 총점 | 판단 |", "|---|---|---|",
-         *[f"| {e['name']} | {e['total']} | {e['decision']} |" for e in sorted(evals, key=lambda e: -e["total"])], "",
+         "", "### 후보별 보류·탈락 사유", "", "| 후보 | 분야·단계 | 총점 | 판단 | 사유 | 확인되지 않은 근거 |",
+         "|---|---|---|---|---|---|",
+         *[f"| {c['name']} | {c['kind']} | {c['total']} | {c['decision']} | {c['reasons']} | {c['gaps']} |"
+           for c in t["candidates"]], "",
          "## 7. 한계점", *[f"- {x}" for x in d["limitations"]], "", "## REFERENCE",
          *[f"{r['n']}. {r['text']}" for r in refs]]
     return "\n".join(L) + "\n"

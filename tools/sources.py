@@ -23,7 +23,7 @@ SITE_NAMES = {
     "bloomberg.com": "Bloomberg", "businesswire.com": "Business Wire", "prnewswire.com": "PR Newswire",
     "forbes.com": "Forbes", "crunchbase.com": "Crunchbase", "futurefarming.com": "Future Farming",
     "jointips.or.kr": "TIPS 창업기업 목록", "mafra.go.kr": "농림축산식품부", "agnavigator.com": "AgNavigator",
-    "daum.net": "다음뉴스", "news.naver.com": "네이버 뉴스", "aving.net": "에이빙(AVING)", "newsis.com": "뉴시스",
+    "data.go.kr": "공공데이터포털", "daum.net": "다음뉴스", "news.naver.com": "네이버 뉴스", "aving.net": "에이빙(AVING)", "newsis.com": "뉴시스",
     "news1.kr": "뉴스1", "asiae.co.kr": "아시아경제", "fnnews.com": "파이낸셜뉴스", "heraldcorp.com": "헤럴드경제",
     "dt.co.kr": "디지털타임스", "etoday.co.kr": "이투데이", "sisajournal-e.com": "시사저널e", "the-pr.co.kr": "더피알",
     "cbinsights.com": "CB Insights", "financialcontent.com": "FinancialContent", "zdnet.co.kr": "지디넷코리아",
@@ -122,7 +122,7 @@ class SourceRegistry:
         self.data[sid] = {
             "id": sid, "key": key, "kind": "web", "url": url, "site": site,
             "title": _clean_title(title, site), "date": pub, "date_is_access": pub is None,
-            "access_date": access_date, "author": _author(result.get("content", "")),
+            "access_date": access_date, "author": result.get("author") or _author(result.get("content", "")),
             "snippet": (result.get("content") or "")[:1200], "agent": agent, "query": query,
             "body": re.sub(r"\s+", " ", result.get("raw_content") or "")[:6000],
         }

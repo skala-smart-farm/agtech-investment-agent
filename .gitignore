@@ -11,3 +11,5 @@ replay/emb/
 data/candidates/
 outputs/runs/
 *.log
+# 국민연금 원본 CSV(115MB)는 제외, 회사별 조회 결과만 replay/snapshots/ 에 커밋
+replay/nps/

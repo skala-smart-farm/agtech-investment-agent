@@ -55,7 +55,11 @@ def main() -> None:
                         help="저장소에 포함된 재현용 캐시(replay/) 대신 웹·LLM 을 새로 호출해 최신 정보로 평가")
     parser.add_argument("--offline", action="store_true",
                         help="재현 테스트: 캐시에 없는 검색·LLM 호출이 생기면 바로 실패 (API 키 없이 실행 가능)")
+    parser.add_argument("--retry-failed", action="store_true",
+                        help="재현용 캐시에 실패로 표시된 검색만 다시 시도 (검색 한도 초과로 비었던 근거를 새 키로 보강)")
     args = parser.parse_args()
+    if args.retry_failed:
+        os.environ["SEARCH_RETRY_FAILED"] = "1"
     if args.offline:
         os.environ["REPLAY_OFFLINE"] = "1"
     _check_browser()
@@ -88,8 +92,10 @@ def main() -> None:
         "screened": [{k: r.get(k) for k in ("name", "region", "stage", "round_date", "eligible", "reason", "channels")}
                      for r in state.get("screened", [])],
         "evaluations": [{**{k: e[k] for k in ("name", "total", "decision", "knockouts", "dims", "unknown_ratio")},
+                         "nps": (e.get("profile") or {}).get("nps"),
                          "rows": [{k: r[k] for k in ("qid", "answer", "rationale")} for r in e["scorecard"]["rows"]],
-                         "rejected_yes": e["scorecard"].get("rejected_yes", [])}
+                         "rejected_yes": e["scorecard"].get("rejected_yes", []),
+                         "quote_retried": e["scorecard"].get("quote_retried", 0)}
                         for e in state.get("evaluations", [])],
         "report": report, "rag_traces": state.get("rag_traces", []), "log": state.get("log", []),
         "sources_collected": len(state.get("registry", {})),

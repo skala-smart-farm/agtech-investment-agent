@@ -32,8 +32,11 @@ def get_config(path: str | None = None) -> Config:
 
 
 def require_keys() -> None:
-    """API 키는 실제로 API 를 부를 때만 필요하다 (재현용 캐시만으로 실행할 때는 없어도 된다)."""
-    missing = [k for k in ("OPENAI_API_KEY", "TAVILY_API_KEY") if not os.getenv(k)]
+    """API 키는 실제로 API 를 부를 때만 필요하다 (재현용 캐시만으로 실행할 때는 없어도 된다).
+    검색 키는 Serper·Tavily 중 하나만 있어도 된다."""
+    missing = [] if os.getenv("OPENAI_API_KEY") else ["OPENAI_API_KEY"]
+    if not any(os.getenv(k) for k in ("SERPER_API_KEY", "TAVILY_API_KEY")):
+        missing.append("검색 키(SERPER_API_KEY 또는 TAVILY_API_KEY)")
     if missing:
         raise RuntimeError(f"캐시에 없는 호출이라 {', '.join(missing)} 가 필요합니다. .env.example 을 참고해 .env 를 만드세요.")
 

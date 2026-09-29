@@ -15,6 +15,7 @@ from core.llm import structured
 from core.prompts import render
 from rag.agentic_rag import agentic_rag
 from rag.index import get_chunks
+from tools.fetch import enrich
 from tools.grounding import norm
 from tools.sources import SourceRegistry
 from tools.web_search import web_search
@@ -61,6 +62,8 @@ def tech_node(state: dict) -> dict:
                    (f"{q} revenue customers farms deployed", True), (f"{q} partnership contract distribution", False)]
     for query, deep in queries:
         ids += web_search(query, reg, AGENT, topic="news", recent=False, deep=deep, raw=True)
+    # 회사 기사 원문을 받아 창업자 이력·실적·계약처럼 스니펫에 없는 사실을 보강 (키 불필요)
+    enrich(reg, ids, [norm(name), norm(c.get("name_en") or "")], limit=12)
     # 코퍼스(공공 문서)에서 회사 이름이 직접 나오는 조각 (예: 정부 우수기업 선정 목록) → 날짜 있는 제3자 근거
     keys = [k for k in (norm(name), norm(c.get("name_en") or "")) if len(k) >= 2]
     for ch in get_chunks():

@@ -5,6 +5,7 @@ LLM 은 평가표 질문에 판정(YES/NO/UNKNOWN/N/A)·근거 id·근거 원문
 - 항목(차원)별로 따로 호출한다 (한 항목의 인상이 다른 항목으로 번지는 후광 효과 방지)
 - 점수·기준점·"유망" 같은 표현을 LLM 에 보여 주지 않는다
 - YES 는 인용문이 실제 근거 본문에 있어야 인정한다 (코드가 문자열로 검사). 실패하면 UNKNOWN 으로 강등
+- NO 도 반대 사실을 적은 문장의 인용이 본문에 있어야 인정한다. "근거가 없다"는 NO 가 아니라 UNKNOWN
 - 제3자 근거·최근 24개월·문서 근거 요구 조건을 코드가 검사한다
 - UNKNOWN 은 0점이고 분모를 줄이지 않는다 (정보를 감춘 회사가 유리해지지 않게)
 """
@@ -143,6 +144,13 @@ def _round_rule(c: dict, run_date: str) -> tuple[str, list[str], str]:
     return "YES", ids, f"{rd} {c.get('stage')} {amount} — 적격성 검증에서 원문 인용으로 확인 (코드 판정)"
 
 
+def _nps_line(n: dict) -> str:
+    if n.get("status") != "matched":
+        return "국민연금 가입 사업장 목록에서 확인 안 됨 (3인 미만 법인이거나 사명 다름)"
+    return (f"국민연금 가입자 {n['members']}명({n['ym']}), 최초 가입 {n['first_date']}, "
+            f"{'탈퇴' if n['withdrawn'] else '가입 중'}")
+
+
 def _analysis_text(state: dict) -> str:
     c, t, m, k = state["current"], state.get("tech", {}), state.get("market", {}), state.get("competition", {})
     founders = "; ".join(f"{f['name']}({f['role']}): {f['background']}" for f in t.get("founders", [])) or "확인 불가"
@@ -152,6 +160,7 @@ def _analysis_text(state: dict) -> str:
         f"[기술] 제품: {t.get('product')} / 핵심 기술: {t.get('core_technology')} / 성숙도: {t.get('maturity')} "
         f"({t.get('maturity_evidence')}) / 특허·인증: {t.get('ip_evidence')}",
         f"[팀] {t.get('team_assessment')} / 창업자: {founders}",
+        f"[고용·창업 시기] {_nps_line(c.get('nps') or {})}",
         f"[시장] 규모: {m.get('market_size')} / 성장: {m.get('growth')} / 지불 의향: {m.get('willingness_to_pay')}",
         f"[경쟁] 차별성: {k.get('differentiation')} / 진입장벽: {k.get('entry_barriers')}",
     ])
@@ -173,7 +182,7 @@ def decision_node(state: dict) -> dict:
     bm25 = BM25Okapi([kiwi_tokenize(p[1]) for p in passages])
     judge = structured(Answers, "judge")
 
-    rows, dims, rejected = [], [], []
+    rows, dims, rejected, retried = [], [], [], 0
     for d in rubric["dimensions"]:
         qlist = "\n".join(f"- {q['id']}: {q['text']} (YES 요건: {q['need']})" for q in d["questions"])
         evidence = _evidence_for(d, c["official_name"], passages, bm25, reg)
@@ -186,6 +195,16 @@ def decision_node(state: dict) -> dict:
                 "decision", dimension=d["name"], analysis=analysis, evidence=evidence, run_date=run_date,
                 questions="\n".join(f"- {q['id']}: {q['text']} (YES 요건: {q['need']})" for q in missing)))
             got.update({a.qid: a for a in again.answers})
+        # 인용이 [근거] 원문에 없는 YES·NO 는 한 번만 다시 묻는다 (분석 요약에서 베껴 온 인용 등). 그래도 없으면 아래에서 UNKNOWN
+        bad = [q for q in d["questions"] if (a := got.get(q["id"])) and a.verdict in ("YES", "NO") and a.quote.strip()
+               and not _quote_sources(a.quote, [i for i in a.evidence_ids if i in pool], pool, reg)]
+        if bad:
+            again = judge.invoke(render(
+                "decision", dimension=d["name"], analysis=analysis, evidence=evidence, run_date=run_date,
+                questions="\n".join(f"- {q['id']}: {q['text']} (YES 요건: {q['need']}) — 직전 인용 \"{got[q['id']].quote[:60]}\" 은 "
+                                    f"[근거] 원문에 없다. [근거]에서 글자 그대로 다시 복사하거나, 없으면 UNKNOWN" for q in bad)))
+            got.update({a.qid: a for a in again.answers if a.qid in {q["id"] for q in bad}})
+            retried += len(bad)
         yes = unknown = na = 0
         for q in d["questions"]:
             a = got.get(q["id"])
@@ -212,6 +231,10 @@ def decision_node(state: dict) -> dict:
                 if fail:
                     verdict, note = "UNKNOWN", f"{fail} → UNKNOWN 강등 ({note})"
                     rejected.append({"qid": q["id"], "reason": fail, "quote": a.quote})
+            if verdict == "NO":  # "근거가 없다"는 NO 가 아니라 UNKNOWN. 반대 사실을 적은 문장이 원문에 있어야 NO
+                ev = _quote_sources(a.quote, ev, pool, reg) if a.quote.strip() else []
+                if not ev:
+                    verdict, note = "UNKNOWN", f"반대 근거 인용이 원문에서 확인되지 않음 → NO 대신 UNKNOWN ({note})"
             if q["id"] == "D1":  # 투자 라운드는 적격성 검증에서 인용 검증을 마친 값으로 코드가 판정
                 verdict, ev, note = _round_rule(c, run_date)
             yes += verdict == "YES"
@@ -219,7 +242,7 @@ def decision_node(state: dict) -> dict:
             na += verdict == "N/A"
             rows.append({"dim": d["id"], "qid": q["id"], "question": q["text"], "bessemer": q.get("bessemer", ""),
                          "answer": verdict, "evidence_ids": ev if verdict in ("YES", "NO") else [],
-                         "quote": a.quote if (a and verdict == "YES") else "", "rationale": note})
+                         "quote": a.quote if (a and verdict in ("YES", "NO")) else "", "rationale": note})
         n = len(d["questions"]) - na
         score = d["weight"] * yes / n if n else 0.0
         dims.append({"id": d["id"], "name": d["name"], "weight": d["weight"], "yes": yes, "unknown": unknown,
@@ -247,7 +270,7 @@ def decision_node(state: dict) -> dict:
     sensitivity = {str(t): ("투자" if total >= t and not [r for r in reasons if not r.startswith("점수 미달")] else "보류")
                    for t in (60, 70, 80)}
     scorecard = {"dims": dims, "rows": rows, "total": total, "threshold": threshold, "reasons": reasons,
-                 "rejected_yes": rejected,
+                 "rejected_yes": rejected, "quote_retried": retried,
                  "knockouts": reasons, "unknown_ratio": unknown_ratio, "decision": decision,
                  "sensitivity": sensitivity}
     msg = (f"[투자 판단] {c['official_name']}: {total}점, UNKNOWN {unknown_ratio:.0%} → {decision}"

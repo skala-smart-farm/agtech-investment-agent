@@ -13,12 +13,31 @@ from core.config import ROOT, get_config, path
 from rag.loader import load_manifest, total_pages
 
 
-LABELS = {"F1": "창업팀 이력", "F2": "기술 책임자 이력", "F3": "최근 마일스톤", "M1": "시장 규모", "M2": "시장 성장",
-          "M3": "경제적 효과", "M4": "수익 모델", "P1": "상용 운영", "P2": "제3자 실증", "P3": "자체 기술", "P4": "인허가",
-          "C1": "특허", "C2": "경쟁사 대비 차별점", "C3": "데이터 축적 구조", "C4": "전략 파트너 계약", "R1": "매출",
-          "R2": "유료 고객·설치 규모", "R3": "재계약", "R4": "민간 매출", "D1": "최근 라운드", "D2": "기관투자자",
-          "D3": "기업가치", "D4": "자본집약도"}
+def _labels() -> dict:
+    from agents.decision import load_rubric
+
+    return {q["id"]: q["short"] for d in load_rubric()["dimensions"] for q in d["questions"]}
+
+
+LABELS = _labels()
 GAP_KEYS = ["R1", "R2", "R3", "C1", "P4", "P1", "C2"]
+
+
+def _nps_example(run: dict) -> str:
+    for e in sorted(run.get("evaluations", []), key=lambda e: -e["total"]):
+        n = e.get("nps") or {}
+        if n.get("status") == "matched":
+            return f"{e['name']} 가입자 {n['members']}명, 최초 가입 {n['first_date']}"
+    return "평가 후보별 인원·최초 가입일"
+
+
+def _search_providers() -> str:
+    """재현용 캐시에 실제로 결과를 준 검색 공급자만 적는다 (키를 받지 못한 공급자를 쓴 것처럼 쓰지 않게)."""
+    used = set()
+    for f in path(f"{get_config().cache.dir}/search").glob("*.json"):
+        used |= {r.get("provider", "tavily") for r in json.loads(f.read_text(encoding="utf-8"))}
+    names = [n for p, n in (("serper", "Serper(구글)"), ("tavily", "Tavily")) if p in used]
+    return "·".join(names) or "Tavily"
 
 
 def _j(rel: str) -> dict:
@@ -38,10 +57,10 @@ def build() -> str:
     members = "+".join(sorted(team.members))
     evals = sorted(run.get("evaluations", []), key=lambda e: -e["total"])
     top_rows = {r["qid"]: r["answer"] for r in (evals[0]["rows"] if evals else [])}
-    strengths = "·".join(LABELS[q] for q in LABELS if top_rows.get(q) == "YES") or "-"
-    gaps = "·".join(LABELS[q] for q in GAP_KEYS if top_rows.get(q) not in (None, "YES")) or "-"
+    strengths = ", ".join(LABELS[q] for q in LABELS if top_rows.get(q) == "YES") or "-"
+    gaps = ", ".join(LABELS[q] for q in GAP_KEYS if top_rows.get(q) not in (None, "YES")) or "-"
     md = Environment(loader=FileSystemLoader(ROOT / "docs")).get_template("README.md.j2").render(
-        cfg=cfg, run=run, strengths=strengths, gaps=gaps, r=run.get("report", {}), evals=evals,
+        cfg=cfg, run=run, strengths=strengths, gaps=gaps, nps_example=_nps_example(run), search_providers=_search_providers(), r=run.get("report", {}), evals=evals,
         disc={"candidates": m.group(1) if m else "-", "cross": m.group(2) if m else "-"},
         n_screened=len(run.get("screened", [])), n_eligible=sum(1 for s in run.get("screened", []) if s["eligible"]),
         rejected=sum(len(e.get("rejected_yes", [])) for e in run.get("evaluations", [])),

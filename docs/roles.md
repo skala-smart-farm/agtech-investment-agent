@@ -16,14 +16,15 @@
 ---
 
 ## ① 스타트업 발굴·적격성 검증
-- **담당 파일**: `agents/discovery.py`, `agents/eligibility.py`, `tools/channels.py`(TIPS·와우테일), `tools/listing_check.py`(상장 목록), `tools/grounding.py`(인용 검증), `eval/eval_eligibility.py`, `data/eval/eligibility_*.jsonl`
+- **담당 파일**: `agents/discovery.py`, `agents/eligibility.py`, `tools/channels.py`(TIPS·와우테일), `tools/listing_check.py`(상장 목록), `tools/nps.py`(국민연금 가입 사업장), `tools/grounding.py`(인용 검증), `eval/eval_eligibility.py`, `data/eval/eligibility_*.jsonl`
 - **설계서 담당**: 2.1 에이전트 정의 중 발굴·검증, 2.2 스타트업 발굴 전략
 - **발표 담당**: README Features 의 "회사 사건 기반 발굴"·"적격성 관문", 차별점 1
-- **꼭 외울 수치**: 발굴 채널 8개, 후보 85곳 → 검증 16곳 → 적격 11곳, 적격성 정확도 20개사 1.00 · 홀드아웃 10개사 1.00, 첫 버전 정확도 0.50
+- **꼭 외울 수치**: 발굴 채널 8개, 후보 85곳 → 검증 16곳 → 적격 14곳, 적격성 정확도 20개사 1.00 · 홀드아웃 10개사 1.00, 첫 버전 정확도 0.50
 - **예상 질문**
   - 링크드인으로 창업자를 찾지 않은 이유는? → 사람의 경력은 회사의 창업 시기·투자 단계·상장 여부를 알려 주지 않는다. TIPS 선정(운영사 선투자)·투자 기사·상장 목록처럼 회사에 일어난 날짜 있는 사건을 쓴다
   - 긴트는 왜 탈락했나? → 마지막 라운드 이름이 "프리IPO"라서 Series C 이후로 보수적으로 판단했다 (경계 사례)
   - 비상장 여부를 LLM 이 판단하나? → 아니다. 한국거래소 KIND 상장 목록과 코드로 대조하고, 목록을 못 불러오면 통과시키지 않는다
+  - 창업 시기는 어떻게 확인했나? → 국민연금 가입 사업장 내역(공공데이터, 키 불필요)의 최초 가입일(첫 고용 시점)과 현재 가입자 수. 탈퇴 사업장이면 폐업 신호(G4). 예: 메타파머스 19명, 최초 가입 2023-03-01
 - **Lessons Learned**: 적격성 판정 정확도 0.50 → 1.00 (투자 기사에 AI 설명이 없다고 탈락시키던 문제, 여러 회사를 묶은 기사에서 다른 회사 단계를 가져오던 문제)
 
 ## ② RAG 파이프라인
@@ -38,7 +39,7 @@
 - **Lessons Learned**: 하이브리드가 늘 좋은 건 아니었다 (한국어 문서는 좋아지고 영어 문서는 순위가 떨어짐)
 
 ## ③ 분석 에이전트 (기술·팀 · 시장성 · 경쟁사)
-- **담당 파일**: `agents/tech.py`, `agents/market.py`, `agents/competition.py`, `prompts/tech.md`, `prompts/market.md`, `prompts/competition.md`, `tools/web_search.py`
+- **담당 파일**: `agents/tech.py`, `agents/market.py`, `agents/competition.py`, `prompts/tech.md`, `prompts/market.md`, `prompts/competition.md`, `tools/web_search.py`, `tools/search_providers.py`(Serper·Tavily), `tools/fetch.py`(기사 원문 수집)
 - **설계서 담당**: 2.1 에이전트 정의 표 (분석 에이전트 3개)
 - **발표 담당**: README Agents 섹션
 - **꼭 외울 것**: 기술·팀 분석과 시장성 평가는 **병렬 실행**, 둘 다 끝나면 경쟁사 비교. 시장성은 Agentic RAG 6문항, 같은 세부 분야는 캐시 재사용
@@ -52,9 +53,10 @@
 - **담당 파일**: `rubric.yaml`, `agents/decision.py`, `prompts/decision.md`, `eval/eval_judge.py`
 - **설계서 담당**: 3장 투자 판단 기준(평가표)
 - **발표 담당**: README 차별점 2, "투자 보고서 핵심"
-- **꼭 외울 것**: Scorecard 가중치 30/25/15/10/10/10 × Bessemer 10문항 = 24문항 YES/NO/UNKNOWN, 투자 조건(70점 이상·창업자·시장성 50% 이상·Deal-killer 없음·UNKNOWN 40% 이하), 이번 결과: 4곳 모두 보류, 최고점 메타파머스 42.6점
+- **꼭 외울 것**: Scorecard 가중치 30/25/15/10/10/10 × Bessemer 10문항 = 24문항 YES/NO/UNKNOWN, 투자 조건(70점 이상·창업자·시장성 50% 이상·Deal-killer 없음·UNKNOWN 40% 이하), 이번 결과: 4곳 모두 보류, 최고점 메타파머스 60.0점
 - **예상 질문**
-  - 1~5점 척도가 아니라 이진 판정인 이유는? → 3점과 4점의 차이를 설명할 수 없다. YES 는 근거 원문 인용이 있어야 하고, 코드가 인용이 실제 본문에 있는지 확인한다
+  - 1~5점 척도가 아니라 이진 판정인 이유는? → 3점과 4점의 차이를 설명할 수 없다. YES·NO 모두 근거 원문 인용이 있어야 하고, 코드가 인용이 실제 본문에 있는지 확인한다 ("근거 없음"은 NO 가 아니라 UNKNOWN)
+  - NO 와 UNKNOWN 은 어떻게 다른가? → NO 는 반대 사실을 적은 문장의 인용이 원문에 있을 때만. "근거가 없다"는 UNKNOWN. 인용이 원문에 없으면 한 번 다시 묻고, 그래도 없으면 UNKNOWN
   - 70점 기준의 근거는? → 원 방법론(Payne Scorecard)에서 나온 값이 아닌 설계 가정이라, 60·70·80점 민감도를 보고서에 함께 적었다
   - 전부 보류면 평가표가 너무 엄격한 것 아닌가? → 초기 스타트업은 매출·고객·특허를 공개하지 않는다. 근거 없는 YES 를 막은 대가로 "정보 부족 보류"가 늘었고, 그 항목을 실사 체크리스트로 넘겼다
 - **Lessons Learned**: 근거를 엄격히 하면 UNKNOWN 이 늘어난다 (LLM 은 날짜 계산을 틀려 24개월 판정을 코드로 옮김)
@@ -66,6 +68,7 @@
 - **꼭 외울 것**: 보류 → 다음 후보 → 대기열이 비면 재발굴 → 평가 상한 4곳 또는 후보 소진 시 보고서. 반복 상한(발굴 2라운드·평가 4곳·재작성 2회·recursion 100). 보고서 5쪽, SUMMARY A4 20%, 평가표 불일치 0건. 새 clone + API 키 없이 재현 통과
 - **예상 질문**
   - SUMMARY 에 개요 문장이 없다는 걸 어떻게 보장하나? → 금지어 검사 + 결론 줄은 코드가 평가 결과로 쓴다. 렌더링 후 SUMMARY 높이를 재서 A4 절반 이하인지 확인
+  - 후보가 모두 보류면 보고서는? → 종료 후 최고점 후보를 중심으로 쓰고, 6장에 후보별 보류·탈락 사유 표(보류 사유·반대 근거·확인 안 된 문항)를 코드가 붙인다
   - 코드를 돌리면 정말 같은 보고서가 나오나? → 검색 결과·LLM 응답을 replay/ 에 담아, 새 clone 에서 키 없이 `--offline` 으로 돌려도 보고서가 글자 하나 다르지 않았다
   - 병렬 실행에서 State 충돌은? → 누적 키에 Reducer, 근거 id 는 해시라 충돌하지 않는다
 - **Lessons Learned**: 재현성은 코드만의 문제가 아니다 (캐시 키 설계 실수, 라이브러리 버전, API 한도)

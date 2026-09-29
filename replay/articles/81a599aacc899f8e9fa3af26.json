@@ -1,0 +1,1 @@
+{"error": "HTTPSConnectionPool(host='www.oimarket.kr', port=443): Max retries exceeded with url: /partners (Caused by SSLError(SSLCertVerificationError(1, \"[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify fai"}

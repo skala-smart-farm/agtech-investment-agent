@@ -31,4 +31,6 @@ dependencies = [
     "pandas>=2.3.3",
     "pydantic>=2.11.0",
     "tabulate>=0.10.0",
+    "trafilatura>=2.2.0",
+    "requests>=2.34.2",
 ]

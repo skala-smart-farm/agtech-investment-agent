@@ -1,0 +1,432 @@
+{
+ "메타파머스|metafarmers": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "주식회사메타파머스(MetafarmersInc.)",
+    "brn6": "264870",
+    "status": "1",
+    "corp": "1",
+    "industry": "응용 소프트웨어 개발 및 공급업",
+    "first_date": "2023-03-01",
+    "withdraw_date": NaN,
+    "members": "19",
+    "new": "0",
+    "lost": "0"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "아이오크롭스|iocrops": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "농업회사법인 아이오크롭스 주식회사",
+    "brn6": "833810",
+    "status": "1",
+    "corp": "1",
+    "industry": "응용 소프트웨어 개발 및 공급업",
+    "first_date": "2018-08-08",
+    "withdraw_date": NaN,
+    "members": "24",
+    "new": "0",
+    "lost": "1"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "엔씽|n.thing": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "주식회사 엔씽",
+    "brn6": "134872",
+    "status": "1",
+    "corp": "1",
+    "industry": "응용 소프트웨어 개발 및 공급업",
+    "first_date": "2015-01-02",
+    "withdraw_date": NaN,
+    "members": "8",
+    "new": "3",
+    "lost": "0"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "리비타|revita": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "주식회사 리비타 (REVITA)",
+    "brn6": "515870",
+    "status": "1",
+    "corp": "1",
+    "industry": "시스템 소프트웨어 개발 및 공급업",
+    "first_date": "2026-01-02",
+    "withdraw_date": NaN,
+    "members": "5",
+    "new": "0",
+    "lost": "0"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "그린랩스": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "주식회사그린랩스",
+    "brn6": "320880",
+    "status": "1",
+    "corp": "1",
+    "industry": "기타 인문 및 사회과학 연구개발업",
+    "first_date": "2017-05-02",
+    "withdraw_date": NaN,
+    "members": "32",
+    "new": "2",
+    "lost": "6"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "새팜": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "(주)새팜",
+    "brn6": "655870",
+    "status": "1",
+    "corp": "1",
+    "industry": "농림수산학 및 수의학 연구개발업",
+    "first_date": "2022-07-01",
+    "withdraw_date": NaN,
+    "members": "16",
+    "new": "0",
+    "lost": "0"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "조벡스": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "주식회사 조벡스",
+    "brn6": "656810",
+    "status": "1",
+    "corp": "1",
+    "industry": "시스템 소프트웨어 개발 및 공급업",
+    "first_date": "2024-05-13",
+    "withdraw_date": NaN,
+    "members": "7",
+    "new": "1",
+    "lost": "1"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "팜에이트": {
+  "status": "ambiguous",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "농업회사법인 팜에이트 주식회사",
+    "brn6": "301817",
+    "status": "1",
+    "corp": "1",
+    "industry": "종자 및 묘목 도매업",
+    "first_date": "2005-09-01",
+    "withdraw_date": NaN,
+    "members": "136",
+    "new": "3",
+    "lost": "2"
+   },
+   {
+    "ym": "2026-08",
+    "name": "농업회사법인팜에이트주식회사(이천지점)",
+    "brn6": "593850",
+    "status": "1",
+    "corp": "1",
+    "industry": "곡물 및 기타 식량작물 재배업",
+    "first_date": "2017-05-24",
+    "withdraw_date": NaN,
+    "members": "62",
+    "new": "1",
+    "lost": "1"
+   },
+   {
+    "ym": "2026-08",
+    "name": "농업회사법인팜에이트주식회사(광주지점)",
+    "brn6": "845850",
+    "status": "1",
+    "corp": "1",
+    "industry": "기타 과실ㆍ채소 가공 및 저장 처리업",
+    "first_date": "2022-08-09",
+    "withdraw_date": NaN,
+    "members": "15",
+    "new": "2",
+    "lost": "0"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "대동애그테크|daedongagtech": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "주식회사 대동애그테크",
+    "brn6": "196880",
+    "status": "1",
+    "corp": "1",
+    "industry": "컴퓨터 시스템 통합 자문 및 구축 서비스업",
+    "first_date": "2022-02-15",
+    "withdraw_date": NaN,
+    "members": "66",
+    "new": "1",
+    "lost": "0"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "긴트|gint": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "주식회사 긴트",
+    "brn6": "266880",
+    "status": "1",
+    "corp": "1",
+    "industry": "배전반 및 전기 자동제어반 제조업",
+    "first_date": "2015-10-27",
+    "withdraw_date": NaN,
+    "members": "106",
+    "new": "5",
+    "lost": "3"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "새팜|saepam": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "(주)새팜",
+    "brn6": "655870",
+    "status": "1",
+    "corp": "1",
+    "industry": "농림수산학 및 수의학 연구개발업",
+    "first_date": "2022-07-01",
+    "withdraw_date": NaN,
+    "members": "16",
+    "new": "0",
+    "lost": "0"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "조벡스|jobex": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "주식회사 조벡스",
+    "brn6": "656810",
+    "status": "1",
+    "corp": "1",
+    "industry": "시스템 소프트웨어 개발 및 공급업",
+    "first_date": "2024-05-13",
+    "withdraw_date": NaN,
+    "members": "7",
+    "new": "1",
+    "lost": "1"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "엔씽|nthing": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "주식회사 엔씽",
+    "brn6": "134872",
+    "status": "1",
+    "corp": "1",
+    "industry": "응용 소프트웨어 개발 및 공급업",
+    "first_date": "2015-01-02",
+    "withdraw_date": NaN,
+    "members": "8",
+    "new": "3",
+    "lost": "0"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "퓨처커넥트|futureconnect": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "퓨처커넥트주식회사",
+    "brn6": "801810",
+    "status": "1",
+    "corp": "1",
+    "industry": "그 외 기타 정보 서비스업",
+    "first_date": "2021-02-21",
+    "withdraw_date": NaN,
+    "members": "17",
+    "new": "0",
+    "lost": "0"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "엠트리센|mtricen": {
+  "status": "not_found",
+  "matches": [],
+  "ym": "2026-08"
+ },
+ "에임비랩|aimbelab": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "주식회사에임비랩(AimBelabInc.)",
+    "brn6": "209816",
+    "status": "1",
+    "corp": "1",
+    "industry": "응용 소프트웨어 개발 및 공급업",
+    "first_date": "2020-04-15",
+    "withdraw_date": NaN,
+    "members": "10",
+    "new": "0",
+    "lost": "0"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "터빈크루|turbinecrew": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "주식회사 터빈크루",
+    "brn6": "111819",
+    "status": "1",
+    "corp": "1",
+    "industry": "에너지 저장장치 제조업",
+    "first_date": "2022-12-01",
+    "withdraw_date": NaN,
+    "members": "27",
+    "new": "10",
+    "lost": "1"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "바르카|barka": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "주식회사 바르카",
+    "brn6": "776870",
+    "status": "1",
+    "corp": "1",
+    "industry": "기타 자연과학 연구개발업",
+    "first_date": "2022-07-01",
+    "withdraw_date": NaN,
+    "members": "4",
+    "new": "0",
+    "lost": "1"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "아이티테크|ittech": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "주식회사아이티테크",
+    "brn6": "561880",
+    "status": "1",
+    "corp": "1",
+    "industry": "시스템 소프트웨어 개발 및 공급업",
+    "first_date": "2019-12-10",
+    "withdraw_date": NaN,
+    "members": "8",
+    "new": "1",
+    "lost": "1"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "대봉유통|daebongdistribution": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "주식회사 대봉유통",
+    "brn6": "441810",
+    "status": "1",
+    "corp": "1",
+    "industry": "곡물 및 유지작물 도매업",
+    "first_date": "2025-05-07",
+    "withdraw_date": NaN,
+    "members": "16",
+    "new": "2",
+    "lost": "2"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "두번째바다|secondocean": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "주식회사 두번째바다",
+    "brn6": "326810",
+    "status": "1",
+    "corp": "1",
+    "industry": "기타 자연과학 연구개발업",
+    "first_date": "2024-07-01",
+    "withdraw_date": NaN,
+    "members": "3",
+    "new": "0",
+    "lost": "0"
+   }
+  ],
+  "ym": "2026-08"
+ },
+ "트랙팜|trackfarm": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "주식회사트랙팜",
+    "brn6": "244880",
+    "status": "1",
+    "corp": "1",
+    "industry": "응용 소프트웨어 개발 및 공급업",
+    "first_date": "2022-11-10",
+    "withdraw_date": NaN,
+    "members": "7",
+    "new": "0",
+    "lost": "0"
+   }
+  ],
+  "ym": "2026-08"
+ }
+}

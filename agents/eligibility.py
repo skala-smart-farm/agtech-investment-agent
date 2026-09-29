@@ -18,8 +18,11 @@ from core.config import get_config
 from core.llm import structured
 from core.prompts import render
 from tools.grounding import STAGE_TERMS, fuzzy_in, norm
+from tools.fetch import enrich
 from tools.listing_check import is_krx_listed
-from tools.sources import SourceRegistry
+from tools.nps import as_evidence, summarize
+from tools.nps import lookup as nps_lookup
+from tools.sources import SourceRegistry, today
 from tools.web_search import web_search
 
 AGENT = "eligibility"
@@ -97,7 +100,14 @@ def _check_one(cand: dict, registry: dict) -> tuple[dict, dict]:
                           raw=True)
         ids += web_search(f"{q} acquired acquisition IPO", reg, AGENT, topic="general", recent=False)
         ids += web_search(f"{q} layoffs shut down closes operations", reg, AGENT, topic="general", recent=False)  # G4
+    # 국민연금 가입 사업장: 실재·창업 시기(최초 가입일)·현재 인원·탈퇴 여부를 공공데이터로 확인 (키 불필요)
+    nps = summarize(nps_lookup([name, en]))
+    if ev := as_evidence(name, nps):
+        nps["evidence_id"] = reg.add_web(ev, AGENT, "국민연금 가입 사업장 내역", today(), key=f"nps:{norm(name)}")
+        ids.append(nps["evidence_id"])
     ids = list(dict.fromkeys(ids))
+    # 투자 기사 원문을 받아 단계·금액·날짜 근거를 보강 (검색 스니펫만으로는 단계가 안 보이는 경우가 많음)
+    enrich(reg, ids, [norm(name), norm(en)], limit=6)
 
     res: Eligibility = structured(Eligibility, "judge").invoke(
         render("eligibility", name=name, name_en=en, allowed=", ".join(sorted(ALLOWED)),
@@ -125,6 +135,8 @@ def _check_one(cand: dict, registry: dict) -> tuple[dict, dict]:
         reasons.append("G5 AgTech 분야가 아님")
     if res.distress:
         reasons.append(f"G4 중대한 부정 신호: {res.distress_note}")
+    if nps.get("withdrawn"):
+        reasons.append("G4 국민연금 사업장 탈퇴 (폐업·휴업 가능성)")
     hosts = {reg.get(i)["url"].split("/")[2].lower() for i in ids if reg.get(i) and reg.get(i)["url"].count("/") >= 2}
     own = [k for k in (norm(en), norm(name)) if len(k) >= 3]
     third = {h for h in hosts if not any(k in norm(h) for k in own)}
@@ -135,7 +147,7 @@ def _check_one(cand: dict, registry: dict) -> tuple[dict, dict]:
         round_date=res.latest_round_date, round_amount=res.latest_round_amount, stage_evidence_ids=stage_ids,
         exit_evidence_ids=[i for i in res.exit_evidence_ids if i in valid], distress=res.distress,
         distress_note=res.distress_note, one_line=res.one_line, info_richness=res.info_richness,
-        raw_stage=res.latest_stage, krx_listed=listed_krx, third_party_hosts=sorted(third), evidence_ids=ids, eligible=not reasons, reason="; ".join(reasons) or "통과",
+        raw_stage=res.latest_stage, krx_listed=listed_krx, third_party_hosts=sorted(third), nps=nps, evidence_ids=ids, eligible=not reasons, reason="; ".join(reasons) or "통과",
     )
     return record, reg.data
 
@@ -150,14 +162,16 @@ def eligibility_node(state: dict) -> dict:
     with ThreadPoolExecutor(max_workers=4) as ex:
         for rec, reg_data in ex.map(lambda c: _check_one(c, copy.deepcopy(snapshot)), cands):
             records.append(rec)
-            for k, v in reg_data.items():  # 후보 순서대로 병합, 먼저 등록된 근거를 유지
-                registry.setdefault(k, v)
+            for k, v in reg_data.items():  # 후보 순서대로 병합, 본문을 새로 채운 근거는 갱신
+                if k not in registry or (v.get("body") and not registry[k].get("body")):
+                    registry[k] = v
 
     region_rank = {r: i for i, r in enumerate(cfg.domain.region_priority)}
     passed = [r for r in records if r["eligible"]]
     # 공개 정보가 풍부한 후보부터 평가한다 (근거가 적으면 평가표 대부분이 UNKNOWN 이 되어 판단 자체가 어려움)
     for r in passed:
-        r["richness_score"] = r["info_richness"] * 2 + len(r["channels"]) + min(len(r.get("third_party_hosts", [])), 6)
+        r["richness_score"] = (r["info_richness"] * 2 + len(r["channels"]) + min(len(r.get("third_party_hosts", [])), 6)
+                               + (1 if r.get("nps", {}).get("status") == "matched" else 0))
     passed.sort(key=lambda r: (region_rank.get(r["region"], 9), -r["richness_score"],
                                -(int(r["round_date"][:4]) if r.get("round_date", "")[:4].isdigit() else 0)))
     queue = list(state.get("queue", [])) + passed
