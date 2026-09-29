@@ -37,11 +37,14 @@ DB_SITES = {"THE VC", "혁신의숲"}
 # 아래 표지들은 공백·기호를 뺀 소문자 글자(norm)에서 찾는다
 # 제3자 근거 문항: 기사에 실렸어도 대표·회사 측 발언이나 목표·계획이면 제3자가 확인한 사실이 아니다
 COMPANY_VOICE = ("대표는", "대표가", "대표이사는", "대표의설명", "라고말했다", "라고밝혔다", "설명했다", "설명이다",
-                 "회사측", "회사는", "목표", "계획", "예정", "said", "plansto", "aimsto")
+                 "회사측", "회사는", "목표", "계획", "예정")
+# 영어 발화 표지는 공백을 지우면 'has aided' 같은 오탐이 생겨 원문에서 단어 경계로 찾는다
+COMPANY_VOICE_EN = re.compile(r"\b(said|says|plans to|aims to|according to the company)\b", re.I)
 # 상용 운영 문항: 예정·실증 단계를 뜻하는 표현
 PLANNED = re.compile(r"상용화를기점|상용화예정|출시예정|목표|실증|poc|proofofconcept|시범|(?<!auto)pilot")
 # 상용 운영 문항 YES 요건(설치 수·면적·두수·고객명): 숫자, 한글 수량 표현, 농협·법인 같은 고객 이름
-SCALE = re.compile(r"\d|(한|두|세|네|다섯|여섯|일곱|여덟|아홉|수십|수백|수천)(곳|개소|농가|농장|마리)|농협|영농조합|농업회사법인")
+SCALE = re.compile(r"\d|농협|영농조합|농업회사법인")
+SCALE_WORD = re.compile(r"(?<![가-힣])(한|두|세|네|다섯|여섯|일곱|여덟|아홉|수십|수백|수천)\s*(곳|개소|농가|농장|마리)")
 # NO 판정 이유에 이런 말이 있으면 반대 사실이 아니라 근거 부족이다
 NO_HEDGE = re.compile(r"추정|불분명|명확하지않|확인되지않|없어|없으므로|근거가없")
 UNDISCLOSED = ("비공개", "미공개", "undisclosed", "비밀", "n/a")
@@ -96,7 +99,10 @@ def _company_voice(quote: str, text: str, keys: list[str], window: int = 120) ->
     near = _around(quote, text, window)
     if near is None:
         return True
-    return any(v in near for v in COMPANY_VOICE) or any(k + "에따르면" in near for k in [*keys, "회사", "업체"])
+    raw_pos = text.find(quote[:20])
+    raw = text[max(0, raw_pos - window): raw_pos + len(quote) + window] if raw_pos >= 0 else ""
+    return (any(v in near for v in COMPANY_VOICE) or any(k + "에따르면" in near for k in [*keys, "회사", "업체"])
+            or bool(COMPANY_VOICE_EN.search(raw)))
 
 
 def _planned(quote: str, texts: list[str], window: int = 120) -> bool:
@@ -110,7 +116,7 @@ def _has_scale(quote: str, keys: list[str]) -> bool:
     q = _norm(quote)
     for k in keys:
         q = q.replace(k, "")
-    return bool(SCALE.search(q))
+    return bool(SCALE.search(q) or SCALE_WORD.search(quote))
 
 
 def _passages(pool: list[str], reg: SourceRegistry, size: int = 520, step: int = 420) -> list[tuple[str, str]]:
@@ -253,7 +259,8 @@ def decision_node(state: dict) -> dict:
                 questions="\n".join(f"- {q['id']}: {q['text']} (YES 요건: {q['need']})" for q in missing)))
             got.update({a.qid: a for a in again.answers})
         # 인용이 [근거] 원문에 없는 YES·NO 는 한 번만 다시 묻는다 (분석 요약에서 베껴 온 인용 등). 그래도 없으면 아래에서 UNKNOWN
-        bad = [q for q in d["questions"] if (a := got.get(q["id"])) and a.verdict in ("YES", "NO") and a.quote.strip()
+        bad = [q for q in d["questions"] if q["id"] != "D1" and (a := got.get(q["id"])) and a.verdict in ("YES", "NO")
+               and a.quote.strip()
                and not _quote_sources(a.quote, [i for i in a.evidence_ids if i in pool], pool, reg)]
         if bad:
             again = judge.invoke(render(
@@ -295,7 +302,7 @@ def decision_node(state: dict) -> dict:
                     fail = "상용 규모 근거 없음 (인용에 설치 수·면적·두수·고객명이 없음)"
                 elif q.get("recent") and not any(_is_recent(reg.get(i), run_date) for i in ev):
                     fail = "최근 24개월 이내 근거 아님"
-                elif q.get("recent") and _events_too_old(f"{a.quote} {a.rationale}", run_date):
+                elif q.get("recent") and not q.get("market_level") and _events_too_old(f"{a.quote} {a.rationale}", run_date):
                     fail = "언급된 사건 날짜가 모두 평가 기준일로부터 24개월보다 오래됨 (코드 날짜 검사)"
                 if fail:
                     verdict, note = "UNKNOWN", f"{fail} → UNKNOWN 강등 ({note})"
