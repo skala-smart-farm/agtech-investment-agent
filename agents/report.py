@@ -31,6 +31,18 @@ from tools.sources import (GROUPS, SourceRegistry, citable, format_reference, me
 
 AGENT = "report"
 CITE = re.compile(r"\[\s*([WD][0-9a-f]{5}(?:\s*[,，]\s*[WD][0-9a-f]{5})*)\s*\]")
+PAREN_CITE = re.compile(r"\(\s*([WD][0-9a-f]{5}(?:\s*[,，]\s*[WD][0-9a-f]{5})*)\s*\)")  # LLM 이 (W1a2b3) 로 쓴 인용
+
+
+def _fix_cites(x):
+    """초안 전체에서 소괄호 인용 (W1a2b3) 을 대괄호 [W1a2b3] 로 바꾼다 (검사·번호 매기기가 대괄호만 알아보므로)."""
+    if isinstance(x, str):
+        return PAREN_CITE.sub(r"[\1]", x)
+    if isinstance(x, list):
+        return [_fix_cites(i) for i in x]
+    if isinstance(x, dict):
+        return {k: _fix_cites(v) for k, v in x.items()}
+    return x
 BANNED = ["본 보고서", "이 보고서", "보고서는", "보고서에서", "보고서의 목적", "판단하는 보고서", "평가하는 보고서",
           "목적으로 작성", "살펴보", "다음과 같", "개요", "소개하", "UNKNOWN"]  # UNKNOWN 은 내부 용어 → "미확인"
 EVALUATIVE = ["우수", "탁월", "뛰어난", "선도적", "독보적", "혁신적인", "압도적"]
@@ -288,8 +300,6 @@ def _consistency_problems(draft: _Body, target: dict, evals: list[dict], run_dat
                 continue
             rows = e["scorecard"]["rows"]
             probs += _claim_problems(f"{note.why_not} {note.recheck}", {r["qid"]: r["answer"] for r in rows}, f"[{e['name']}] ")
-            if any(r["answer"] == "NO" and r.get("evidence_ids") for r in rows) and not CITE.search(note.why_not):
-                probs.append(f"[{e['name']}] 보류 사유에 반대 근거의 근거 id 가 없다")
         missing = [e["name"] for e in evals if not any(_same(n.name, x) for n in draft.candidates for x in _names(e))]
         if missing:
             probs.append(f"candidates 에 {', '.join(missing)} 가 없다 — 심층 평가한 후보마다 하나씩 써라")
@@ -456,8 +466,12 @@ def _candidate_blocks(evals: list[dict], notes: list[CandidateNote], reg: Source
         p, rows = e["profile"], e["scorecard"]["rows"]
         note = next((n for n in notes if any(_same(n.name, x) for x in _names(e))), None)
         one_line = p.get("one_line") or "-"
+        no_ids = list(dict.fromkeys(i for r in rows if r["answer"] == "NO" for i in r.get("evidence_ids") or []
+                                    if reg.get(i) and citable(reg.get(i))))
         if note:
             why, recheck = note.why_not, note.recheck
+            if no_ids and not CITE.search(why):  # 반대 근거가 있는데 번호를 빠뜨리면 코드가 그 근거를 붙인다
+                why = f"{why.rstrip('.')}. 반대 근거 [{', '.join(no_ids[:3])}]"
             if note.business and re.search(r"[가-힣]", note.business):  # 영어 원문 요약 대신 한국어 한 줄
                 one_line = note.business
         else:
@@ -690,6 +704,7 @@ def report_node(state: dict) -> dict:
     draft, feedback, probs = None, "", []
     for _ in range(3):
         draft = structured(schema).invoke(render("report", **ctx, feedback=feedback, shorten=False))
+        draft = schema.model_validate(_fix_cites(draft.model_dump()))
         probs = (_summary_problems(summary_lines(draft, conclusion, request, situation), cfg.report.summary_max_chars)
                  + _consistency_problems(draft, target, evals, run_date))
         if not probs:
@@ -743,6 +758,7 @@ def report_node(state: dict) -> dict:
         shorten_round += 1
         density = 1
         draft = structured(schema).invoke(render("report", **ctx, feedback="분량 초과", shorten=True))
+        draft = schema.model_validate(_fix_cites(draft.model_dump()))
 
     submit_name = f"RAG-Output_{team.campus}-{team['class']}_{'+'.join(sorted(team.members))}.pdf"
     shutil.copyfile(pdf_path, out_dir / submit_name)

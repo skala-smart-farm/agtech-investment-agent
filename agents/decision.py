@@ -315,6 +315,9 @@ def decision_node(state: dict) -> dict:
                 ev = _quote_sources(a.quote, ev, pool, reg) if a.quote.strip() else []
                 if not ev:
                     verdict, note = "UNKNOWN", f"반대 근거 인용이 원문에서 확인되지 않음 → NO 대신 UNKNOWN ({note})"
+                elif not q.get("market_level") and not any(_near_company(a.quote, reg.text(i), company_keys) for i in ev):
+                    # 업계 일반론(예: '농업용 로봇은 시범 운영 단계')은 이 회사에 대한 반대 사실이 아니다
+                    verdict, note = "UNKNOWN", f"반대 근거가 이 회사 이야기가 아님(인용 주변에 회사명 없음) → NO 대신 UNKNOWN ({note})"
                 elif NO_HEDGE.search(re.sub(r"\s+", "", a.rationale)) and not NEGATED.search(a.quote):
                     # 이유가 "추정·확인되지 않음·근거가 없어" 류이고 인용문 자체에 부정 표현도 없으면 근거 부족
                     verdict, note = "UNKNOWN", f"반대 사실이 아니라 근거 부족 → NO 대신 UNKNOWN ({note})"

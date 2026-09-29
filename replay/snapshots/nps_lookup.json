@@ -554,5 +554,24 @@
    }
   ],
   "ym": "2026-08"
+ },
+ "팜스태프|farmstaff": {
+  "status": "matched",
+  "matches": [
+   {
+    "ym": "2026-08",
+    "name": "농업회사법인 팜스태프 주식회사",
+    "brn6": "556810",
+    "status": "1",
+    "corp": "1",
+    "industry": "곡물 및 유지작물 도매업",
+    "first_date": "2022-01-06",
+    "withdraw_date": NaN,
+    "members": "4",
+    "new": "0",
+    "lost": "0"
+   }
+  ],
+  "ym": "2026-08"
  }
 }
