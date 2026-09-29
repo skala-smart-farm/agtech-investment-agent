@@ -6,6 +6,7 @@
   재현 때는 저장된 결과를 그대로 쓴다 (결과마다 provider 필드로 출처 공급자를 남긴다).
 - 한 공급자가 한도 초과·오류면 다음 공급자로 넘어간다. 모두 실패하면 실패 표시(.failed)를 남기고,
   --retry-failed 로 실행하면 그 검색만 다시 시도한다.
+- 실패한 검색은 "결과 없음"과 구분해 FAILED_QUERIES 에 남긴다 (적격성 관문의 fail-closed, 보고서 한계점에 사용).
 """
 from __future__ import annotations
 
@@ -28,6 +29,9 @@ PR_MARKET = re.compile(r"market (size|share|growing|to reach|worth|report|intell
                        r"fortune business|researchandmarkets|research and markets)", re.I)
 # 검색 결과 목록 페이지는 근거가 아니다 (예: search.zdnet.co.kr?kwd=...)
 SEARCH_PAGE = re.compile(r"//search\.|/search[/?]|[?&](kwd|q|query|keyword)=", re.I)
+# 실패해서 데이터 없이 끝난 검색 {query, agent}. 실시간 실패와 재현용 캐시의 실패 표시(.failed)를 모두 기록한다.
+# 호출할 때마다 붙인다(같은 쿼리가 여러 번 들어갈 수 있음). 다른 모듈이 같은 객체를 참조하므로 다시 대입하지 않는다
+FAILED_QUERIES: list[dict] = []
 
 
 def _cache_file(key: dict):
@@ -42,7 +46,8 @@ def _legacy_files(key: dict) -> list:
 
 
 def _raw_search(query: str, topic: str, time_range: str | None, max_results: int,
-                include_domains: list[str] | None, depth: str = "basic", raw: bool = False) -> list[dict]:
+                include_domains: list[str] | None, depth: str = "basic", raw: bool = False) -> list[dict] | None:
+    """검색 결과 목록. 검색 자체가 실패하면(모든 공급자 오류, 또는 캐시의 실패 표시) None — 정상적인 "결과 없음"은 []."""
     cfg = get_config()
     # 제외 도메인은 결과를 받은 뒤 다시 거르므로 캐시 키에 넣지 않는다 (목록을 고쳐도 재현용 캐시가 유지되게)
     key = {"q": query, "topic": topic, "tr": time_range, "n": max_results, "dom": include_domains or [],
@@ -55,9 +60,9 @@ def _raw_search(query: str, topic: str, time_range: str | None, max_results: int
     if cfg.cache.search and f.exists():
         return json.loads(f.read_text(encoding="utf-8"))
     failed = f.with_suffix(".failed")
-    # 제출 실행 때 실패한 검색은 재현 때도 "결과 없음"으로 (누구 키로 돌려도 같은 결과). --retry-failed 면 다시 시도
+    # 제출 실행 때 실패한 검색은 재현 때도 실패로 (누구 키로 돌려도 같은 결과). --retry-failed 면 다시 시도
     if cfg.cache.search and failed.exists() and not os.getenv("SEARCH_RETRY_FAILED"):
-        return []
+        return None
     if os.getenv("REPLAY_OFFLINE"):
         raise RuntimeError(f"--offline: 재현용 캐시에 없는 검색입니다 → {query!r}")
     require_keys()
@@ -79,7 +84,7 @@ def _raw_search(query: str, topic: str, time_range: str | None, max_results: int
         failed.unlink(missing_ok=True)
     elif cfg.cache.search:  # 오류(한도 초과 등)는 결과 대신 실패 표시만 남긴다. --fresh(새 캐시)에서는 다시 시도한다
         failed.write_text(json.dumps({"query": query, "error": "search failed"}, ensure_ascii=False), encoding="utf-8")
-    return results
+    return results if ok else None
 
 
 def _call(provider: str, query: str, topic: str, time_range: str | None, max_results: int,
@@ -137,9 +142,12 @@ def web_search(query: str, registry: SourceRegistry, agent: str, *, topic: str =
     n = max_results or cfg.search.max_results
     tr = cfg.search.news_time_range if (recent and topic == "news") else None
     depth = "advanced" if deep else "basic"
-    results = _raw_search(query, topic, tr, n, include_domains, depth, raw)
-    if len(results) < min_results and tr:
-        results += _raw_search(query, topic, cfg.search.fallback_time_range, n, include_domains, depth, raw)
+    got = [_raw_search(query, topic, tr, n, include_domains, depth, raw)]
+    if len(got[0] or []) < min_results and tr:
+        got.append(_raw_search(query, topic, cfg.search.fallback_time_range, n, include_domains, depth, raw))
+    results = [r for g in got for r in g or []]
+    if not results and None in got:  # 실패로 데이터가 없음 → "반증 없음"과 구분해 기록
+        FAILED_QUERIES.append({"query": query, "agent": agent})
     ids: list[str] = []
     blocked = tuple(cfg.search.exclude_domains)
     for r in results:

@@ -1,6 +1,6 @@
 """구조화된 발굴 채널 (키 불필요, 날짜가 정확한 공개 데이터).
 
-- TIPS 창업기업 공개 목록: 설립일·선정연도·운영사(=선투자자)가 필드로 있다.
+- TIPS 창업기업 공개 목록: 대표자·설립일·선정연도·운영사(=선투자자)가 필드로 있다.
   TIPS 는 운영사가 먼저 투자해야 선정되므로, 선정 자체가 "Seed 급 투자를 받은 회사"라는 신호다.
 - 와우테일 '애그테크' 카테고리 (WordPress REST): 투자 유치 기사의 정확한 게시일을 준다.
 둘 다 날짜별 스냅샷을 캐시에 저장해 같은 날 다시 실행하면 같은 입력을 쓴다(재현성).
@@ -13,10 +13,12 @@ import json
 import re
 import time
 from datetime import datetime
+from functools import lru_cache
 
 import requests
 
 from core.config import get_config, path
+from tools.listing_check import normalize
 
 UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) "
                     "Chrome/128.0 Safari/537.36"}
@@ -58,9 +60,35 @@ def tips_agtech(min_year: int = 2021) -> list[dict]:
         intro, name = r.get("intro") or "", r.get("name") or ""
         year = int(str(r.get("selYear") or 0)[:4] or 0)
         if year >= min_year and (AGRI.search(intro) or AGRI.search(name)) and AI.search(intro):
-            out.append({"name": name, "intro": intro[:300], "founded": r.get("estDt"), "sel_year": year,
-                        "operator": r.get("operatorName"), "homepage": r.get("homepageUrl") or ""})
+            out.append({"name": name, "ceo": r.get("ceo") or "", "intro": intro[:300], "founded": r.get("estDt"),
+                        "sel_year": year, "operator": r.get("operatorName"), "homepage": r.get("homepageUrl") or ""})
     return out
+
+
+@lru_cache(maxsize=2)
+def _tips_index(snapshot) -> dict[str, list[dict]]:
+    """정규화한 회사명 → 농업 분야 TIPS 기업 행 (선정연도 제한 없음)."""
+    idx: dict[str, list[dict]] = {}
+    for r in json.loads(snapshot.read_text(encoding="utf-8")):
+        name = r.get("name") or ""
+        if AGRI.search(r.get("intro") or "") or AGRI.search(name):
+            idx.setdefault(normalize(name), []).append(
+                {"name": name, "ceo": r.get("ceo") or "", "founded": r.get("estDt") or "", "sel_year": r.get("selYear")})
+    return idx
+
+
+def tips_profile(names: list[str]) -> dict | None:
+    """TIPS 목록에서 이름이 같은 농업 분야 기업의 대표자·설립일(estDt, YYYY-MM-DD).
+    발굴 단계가 받아 둔 스냅샷만 쓰고 새로 받지 않는다. 스냅샷이 없거나 동명 기업이 둘 이상이면 None."""
+    f = _snapshot("tips")
+    if not f.exists():
+        return None
+    idx = _tips_index(f)
+    for n in names:
+        hits = idx.get(normalize(n)) if n else None
+        if hits and len({(h["ceo"], h["founded"]) for h in hits}) == 1:
+            return hits[0]
+    return None
 
 
 def wowtale_agtech_funding(since_days: int = 730) -> list[dict]:
